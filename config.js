@@ -17,5 +17,5 @@
    nur eben ohne Konto, mit Speicherung im Browser.
 ------------------------------------------------------------- */
 
-window.SUPABASE_URL = "";
-window.SUPABASE_ANON_KEY = "";
+window.SUPABASE_URL = "https://dcmkyvpqnrpgefmjgwmz.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRjbWt5dnBxbnJwZ2VmbWpnd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODY0NTgsImV4cCI6MjEwNDM2MjQ1OH0.w1vwMwtw0IyiNCOOo46JwDvQbTe_DSqLjScqbTWCeLU";
