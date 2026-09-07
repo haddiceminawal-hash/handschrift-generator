@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handschrift-Generator – Text in Handschrift verwandeln</title>
+<meta name="description" content="Verwandle getippten Text in realistisch aussehende Handschrift. Mit linierten und karierten Vorlagen, verschiedenen Schriften und Download als Bild.">
+<meta name="theme-color" content="#2f6fdb">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%8D%EF%B8%8F%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Indie+Flower&family=Architects+Daughter&family=Gloria+Hallelujah&family=Shadows+Into+Light&family=Covered+By+Your+Grace&family=Just+Another+Hand&family=Reenie+Beanie&family=Kalam&family=Rock+Salt&family=Caveat:wght@400;600&family=Dancing+Script:wght@400;600&family=Homemade+Apple&family=Marck+Script&family=Cedarville+Cursive&family=La+Belle+Aurore&family=Zeyada&family=Nothing+You+Could+Do&family=Great+Vibes&family=Sacramento&family=Parisienne&family=Allura&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-glow" aria-hidden="true"></div>
+  <div class="header-row">
+
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">✍️</span>
+      <div class="brand-text">
+        <h1>Handschrift<span class="brand-dot">.</span></h1>
+        <p class="subtitle">Tippe links deinen Text – rechts entsteht ein handgeschriebenes Blatt.</p>
+      </div>
+    </div>
+
+    <!-- ---------- Konto-Widget oben rechts ---------- -->
+    <div class="account-widget">
+      <button type="button" id="konto-toggle" class="account-btn" aria-haspopup="true" aria-expanded="false" title="Konto">
+        <span id="konto-avatar" class="account-avatar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </span>
+        <span id="konto-dot" class="account-dot" hidden></span>
+      </button>
+    </div>
+
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ---------- Linke Seite: Eingabe & Einstellungen ---------- -->
+  <section class="panel" aria-label="Einstellungen">
+
+    <label class="field">
+      <span class="field-label">Dein Text</span>
+      <textarea id="input-text" rows="8" spellcheck="false">Liebe Oma,
+
+vielen Dank für das Rezept! Der Apfelkuchen ist genau so geworden wie bei dir. Nächstes Wochenende backe ich ihn nochmal.
+
+Bis bald!</textarea>
+    </label>
+
+    <div class="controls">
+
+      <label class="field">
+        <span class="field-label">Schriftart</span>
+        <select id="font-family"><!-- wird in script.js gefüllt --></select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Papier</span>
+        <select id="paper-type">
+          <option value="lined" selected>Liniert</option>
+          <option value="grid">Kariert</option>
+          <option value="blank">Blanko</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Tinte</span>
+        <select id="ink-color">
+          <option value="#1a3a8f" selected>Blau</option>
+          <option value="#101318">Schwarz</option>
+          <option value="#123f2b">Dunkelgrün</option>
+          <option value="#7a1220">Rot</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field-label">Schriftgröße <output id="size-out">22</output></span>
+        <input type="range" id="font-size" min="14" max="34" step="1" value="22">
+      </label>
+
+      <label class="field field-wide">
+        <span class="field-label">Unordentlichkeit <output id="mess-out">45</output>%</span>
+        <input type="range" id="messiness" min="0" max="100" step="1" value="45">
+      </label>
+
+    </div>
+
+    <div class="actions">
+      <button type="button" id="reshuffle" class="btn btn-secondary">🎲 Neu würfeln</button>
+      <button type="button" id="download" class="btn btn-primary">⬇︎ Als Bild speichern</button>
+    </div>
+
+    <p id="status" class="status" role="status"></p>
+
+    <details class="own">
+      <summary>✏️ Eigene Handschrift verwenden</summary>
+
+      <ol class="steps">
+        <li>
+          Vorlage ausdrucken und alle Kästchen ausfüllen.
+          <button type="button" id="tpl-download" class="btn btn-secondary btn-small">
+            Vorlage herunterladen
+          </button>
+        </li>
+        <li>
+          Blatt von oben abfotografieren oder scannen.
+          <input type="file" id="sheet-upload" accept="image/*">
+        </li>
+        <li>Die vier schwarzen Ecken anklicken – fertig.</li>
+      </ol>
+
+      <p id="own-status" class="status" role="status"></p>
+      <button type="button" id="own-clear" class="btn btn-secondary btn-small" hidden>
+        Handschrift löschen
+      </button>
+    </details>
+
+  </section>
+
+  <!-- ---------- Rechte Seite: Vorschau ---------- -->
+  <section class="preview" aria-label="Vorschau">
+    <div class="page-wrap">
+      <canvas id="paper" aria-label="Vorschau des handgeschriebenen Blattes"></canvas>
+    </div>
+  </section>
+
+</main>
+
+<!-- Ecken des Fotos anklicken -->
+<div id="corner-overlay" class="overlay" hidden>
+  <div class="overlay-inner">
+    <p id="corner-hint" class="corner-hint"></p>
+    <canvas id="corner-canvas"></canvas>
+    <div class="overlay-actions">
+      <button type="button" id="corner-reset" class="btn btn-secondary btn-small">Punkte zurücksetzen</button>
+      <button type="button" id="corner-cancel" class="btn btn-secondary btn-small">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Konto-Dropdown bewusst außerhalb des Headers, direkt in <body> –
+     so hängt seine Platzierung an keinem verschachtelten position:relative-Elternteil. -->
+<div id="konto-dropdown" class="account-dropdown">
+  <p id="konto-hinweis" class="hinweis" hidden>
+    Konto noch nicht eingerichtet. Ohne Konto wird deine Handschrift nur in
+    diesem Browser gespeichert. Wie du ein Konto einrichtest, steht in
+    <code>KONTO-SETUP.md</code>.
+  </p>
+
+  <div id="konto-abgemeldet" hidden>
+    <p class="hinweis">
+      Melde dich an, damit deine Handschrift erhalten bleibt – auch auf
+      anderen Geräten. Du bekommst einen Link per E-Mail, ein Passwort
+      brauchst du nicht.
+    </p>
+    <label class="field">
+      <span class="field-label">E-Mail</span>
+      <input type="email" id="konto-email" autocomplete="email" placeholder="du@beispiel.de">
+    </label>
+    <button type="button" id="konto-senden" class="btn btn-primary btn-small btn-block">
+      Anmelde-Link schicken
+    </button>
+  </div>
+
+  <div id="konto-angemeldet" hidden>
+    <div class="konto-profil">
+      <span id="konto-avatar-gross" class="account-avatar account-avatar-lg" aria-hidden="true"></span>
+      <div>
+        <p class="konto-profil-label">Angemeldet als</p>
+        <p id="konto-user" class="konto-profil-mail"></p>
+      </div>
+    </div>
+    <div class="actions">
+      <button type="button" id="konto-sichern" class="btn btn-secondary btn-small">Jetzt sichern</button>
+      <button type="button" id="konto-abmelden" class="btn btn-secondary btn-small">Abmelden</button>
+    </div>
+  </div>
+
+  <p id="konto-status" class="status" role="status"></p>
+</div>
+
+<script src="config.js"></script>
+<script src="script.js"></script>
+<script src="scanner.js"></script>
+<script src="konto.js"></script>
+</body>
+</html>

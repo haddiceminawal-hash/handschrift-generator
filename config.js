@@ -1,0 +1,21 @@
+/* -------------------------------------------------------------
+   Zugangsdaten für Supabase
+
+   Hier deine beiden Werte eintragen – zu finden im Supabase-Projekt
+   unter  Project Settings -> API.
+
+   WICHTIG, damit du nicht erschrickst:
+   Der "anon key" ist absichtlich öffentlich. Er darf im Quelltext stehen
+   und ist auch für jeden sichtbar, der die Seite öffnet. Geschützt werden
+   die Daten nicht durch den Schlüssel, sondern durch die Regeln in der
+   Datenbank (Row Level Security) – siehe KONTO-SETUP.md.
+
+   Was NIEMALS hierher gehört: der "service_role key". Der hebelt alle
+   Regeln aus. Der bleibt im Supabase-Dashboard und sonst nirgends.
+
+   Solange die Felder leer sind, funktioniert die App ganz normal weiter –
+   nur eben ohne Konto, mit Speicherung im Browser.
+------------------------------------------------------------- */
+
+window.SUPABASE_URL = "";
+window.SUPABASE_ANON_KEY = "";
