@@ -157,18 +157,112 @@ Bis bald!</textarea>
   </p>
 
   <div id="konto-abgemeldet" hidden>
-    <p class="hinweis">
-      Melde dich an, damit deine Handschrift erhalten bleibt – auch auf
-      anderen Geräten. Du bekommst einen Link per E-Mail, ein Passwort
-      brauchst du nicht.
-    </p>
-    <label class="field">
-      <span class="field-label">E-Mail</span>
-      <input type="email" id="konto-email" autocomplete="email" placeholder="du@beispiel.de">
-    </label>
-    <button type="button" id="konto-senden" class="btn btn-primary btn-small btn-block">
-      Anmelde-Link schicken
-    </button>
+
+    <!-- Anmelden mit Passwort -->
+    <div id="konto-modus-login">
+      <p class="hinweis">
+        Melde dich an, damit deine Handschrift erhalten bleibt – auch auf
+        anderen Geräten.
+      </p>
+      <label class="field">
+        <span class="field-label">E-Mail</span>
+        <input type="email" id="konto-login-email" autocomplete="email" placeholder="du@beispiel.de">
+      </label>
+      <label class="field">
+        <span class="field-label">Passwort</span>
+        <input type="password" id="konto-login-passwort" autocomplete="current-password" placeholder="••••••••">
+      </label>
+      <button type="button" id="konto-login-senden" class="btn btn-primary btn-small btn-block">
+        Anmelden
+      </button>
+      <div class="konto-links">
+        <button type="button" class="link-btn" id="konto-zu-forgot">Passwort vergessen?</button>
+        <button type="button" class="link-btn" id="konto-zu-signup">Konto erstellen</button>
+      </div>
+      <button type="button" class="link-btn block" id="konto-zu-magic">
+        Stattdessen Anmelde-Link per E-Mail
+      </button>
+    </div>
+
+    <!-- Neues Konto registrieren -->
+    <div id="konto-modus-signup" hidden>
+      <p class="hinweis">
+        Neues Konto anlegen – deine Handschrift bleibt dann geräteübergreifend
+        gespeichert.
+      </p>
+      <label class="field">
+        <span class="field-label">E-Mail</span>
+        <input type="email" id="konto-signup-email" autocomplete="email" placeholder="du@beispiel.de">
+      </label>
+      <label class="field">
+        <span class="field-label">Passwort</span>
+        <input type="password" id="konto-signup-passwort" autocomplete="new-password" placeholder="mindestens 6 Zeichen">
+      </label>
+      <label class="field">
+        <span class="field-label">Passwort bestätigen</span>
+        <input type="password" id="konto-signup-passwort2" autocomplete="new-password" placeholder="••••••••">
+      </label>
+      <button type="button" id="konto-signup-senden" class="btn btn-primary btn-small btn-block">
+        Konto erstellen
+      </button>
+      <button type="button" class="link-btn block" id="konto-zu-login-von-signup">
+        Schon ein Konto? Anmelden
+      </button>
+    </div>
+
+    <!-- Passwort vergessen -->
+    <div id="konto-modus-forgot" hidden>
+      <p class="hinweis">
+        Gib deine E-Mail ein – wir schicken dir einen Link zum Zurücksetzen
+        des Passworts.
+      </p>
+      <label class="field">
+        <span class="field-label">E-Mail</span>
+        <input type="email" id="konto-forgot-email" autocomplete="email" placeholder="du@beispiel.de">
+      </label>
+      <button type="button" id="konto-forgot-senden" class="btn btn-primary btn-small btn-block">
+        Link zum Zurücksetzen senden
+      </button>
+      <button type="button" class="link-btn block" id="konto-zu-login-von-forgot">
+        Zurück zur Anmeldung
+      </button>
+    </div>
+
+    <!-- Anmelden per Magic-Link (ohne Passwort) -->
+    <div id="konto-modus-magiclink" hidden>
+      <p class="hinweis">
+        Du bekommst einen Anmelde-Link per E-Mail, ein Passwort brauchst du
+        dafür nicht.
+      </p>
+      <label class="field">
+        <span class="field-label">E-Mail</span>
+        <input type="email" id="konto-magic-email" autocomplete="email" placeholder="du@beispiel.de">
+      </label>
+      <button type="button" id="konto-magic-senden" class="btn btn-primary btn-small btn-block">
+        Anmelde-Link schicken
+      </button>
+      <button type="button" class="link-btn block" id="konto-zu-login-von-magic">
+        Zurück zur Anmeldung mit Passwort
+      </button>
+    </div>
+
+    <!-- Neues Passwort setzen – erscheint automatisch nach Klick auf den
+         Link aus der "Passwort vergessen"-E-Mail -->
+    <div id="konto-modus-reset" hidden>
+      <p class="hinweis">Leg ein neues Passwort fest.</p>
+      <label class="field">
+        <span class="field-label">Neues Passwort</span>
+        <input type="password" id="konto-reset-passwort" autocomplete="new-password" placeholder="mindestens 6 Zeichen">
+      </label>
+      <label class="field">
+        <span class="field-label">Neues Passwort bestätigen</span>
+        <input type="password" id="konto-reset-passwort2" autocomplete="new-password" placeholder="••••••••">
+      </label>
+      <button type="button" id="konto-reset-senden" class="btn btn-primary btn-small btn-block">
+        Neues Passwort speichern
+      </button>
+    </div>
+
   </div>
 
   <div id="konto-angemeldet" hidden>

@@ -352,7 +352,8 @@ body {
 
 textarea,
 select,
-input[type="email"] {
+input[type="email"],
+input[type="password"] {
   width: 100%;
   font-family: inherit;
   font-size: 0.95rem;
@@ -368,10 +369,42 @@ textarea { resize: vertical; line-height: 1.55; }
 
 textarea:focus,
 select:focus,
-input[type="email"]:focus {
+input[type="email"]:focus,
+input[type="password"]:focus {
   outline: none;
   border-color: var(--indigo);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--indigo) 18%, transparent);
+}
+
+/* ---------- Text-Links zum Wechseln zwischen Anmelden / Registrieren / ... ---------- */
+.konto-links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 10px;
+  flex-wrap: wrap;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--indigo);
+  cursor: pointer;
+}
+
+.link-btn:hover,
+.link-btn:focus-visible { text-decoration: underline; }
+
+.link-btn.block {
+  display: block;
+  margin-top: 10px;
+  text-align: center;
+  width: 100%;
 }
 
 input[type="range"] {

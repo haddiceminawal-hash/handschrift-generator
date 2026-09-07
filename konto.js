@@ -6,28 +6,79 @@
    ist sie weg. Mit Konto liegt sie zusätzlich bei Supabase und kommt
    nach dem Anmelden automatisch zurück.
 
-   Angemeldet wird per Magic-Link: E-Mail eingeben, Link anklicken,
-   fertig. Es gibt bewusst kein Passwort – was nicht existiert, kann
-   auch nicht gestohlen oder falsch gespeichert werden.
+   Es gibt zwei Wege, sich anzumelden:
+     - klassisch mit E-Mail + Passwort (inkl. Registrieren und
+       Passwort-vergessen-Zurücksetzen)
+     - per Magic-Link ohne Passwort, für alle, die kein weiteres
+       Passwort merken wollen
+
+   Der Dropdown zeigt dafür fünf Modi, von denen jeweils genau einer
+   sichtbar ist (siehe zeigeModus() weiter unten): login, signup,
+   forgot, magiclink, reset.
 ------------------------------------------------------------- */
 
 const BUCKET = "handschriften";
 const DATEI = "handschrift.json";
+const MIN_PASSWORT_LAENGE = 6;
 
 let supabase = null;
 let nutzer = null;
+
+// Wird true, während jemand über den "Passwort vergessen"-Link zurückkommt.
+// In dieser Zeit ist zwar technisch schon eine Sitzung da, die Person soll
+// aber erst ein neues Passwort setzen, bevor sie als "angemeldet" gilt.
+let istPasswortWiederherstellung = false;
 
 /* ---------- Elemente ---------- */
 
 const kontoHinweis = document.getElementById("konto-hinweis");
 const kontoAbgemeldet = document.getElementById("konto-abgemeldet");
 const kontoAngemeldet = document.getElementById("konto-angemeldet");
-const kontoEmail = document.getElementById("konto-email");
-const kontoSendenBtn = document.getElementById("konto-senden");
 const kontoUserEl = document.getElementById("konto-user");
 const kontoSichernBtn = document.getElementById("konto-sichern");
 const kontoAbmeldenBtn = document.getElementById("konto-abmelden");
 const kontoStatus = document.getElementById("konto-status");
+
+// Die fünf Modi im abgemeldeten Zustand
+const kontoModusEls = {
+  login: document.getElementById("konto-modus-login"),
+  signup: document.getElementById("konto-modus-signup"),
+  forgot: document.getElementById("konto-modus-forgot"),
+  magiclink: document.getElementById("konto-modus-magiclink"),
+  reset: document.getElementById("konto-modus-reset"),
+};
+
+// Anmelden mit Passwort
+const kontoLoginEmail = document.getElementById("konto-login-email");
+const kontoLoginPasswort = document.getElementById("konto-login-passwort");
+const kontoLoginSendenBtn = document.getElementById("konto-login-senden");
+
+// Registrieren
+const kontoSignupEmail = document.getElementById("konto-signup-email");
+const kontoSignupPasswort = document.getElementById("konto-signup-passwort");
+const kontoSignupPasswort2 = document.getElementById("konto-signup-passwort2");
+const kontoSignupSendenBtn = document.getElementById("konto-signup-senden");
+
+// Passwort vergessen
+const kontoForgotEmail = document.getElementById("konto-forgot-email");
+const kontoForgotSendenBtn = document.getElementById("konto-forgot-senden");
+
+// Magic-Link (wie zuvor, jetzt als Alternative zum Passwort)
+const kontoMagicEmail = document.getElementById("konto-magic-email");
+const kontoMagicSendenBtn = document.getElementById("konto-magic-senden");
+
+// Neues Passwort setzen (nach Klick auf den Reset-Link)
+const kontoResetPasswort = document.getElementById("konto-reset-passwort");
+const kontoResetPasswort2 = document.getElementById("konto-reset-passwort2");
+const kontoResetSendenBtn = document.getElementById("konto-reset-senden");
+
+// Text-Links zum Wechseln zwischen den Modi
+const kontoZuForgot = document.getElementById("konto-zu-forgot");
+const kontoZuSignup = document.getElementById("konto-zu-signup");
+const kontoZuMagic = document.getElementById("konto-zu-magic");
+const kontoZuLoginVonSignup = document.getElementById("konto-zu-login-von-signup");
+const kontoZuLoginVonForgot = document.getElementById("konto-zu-login-von-forgot");
+const kontoZuLoginVonMagic = document.getElementById("konto-zu-login-von-magic");
 
 // Das Widget oben rechts im Header
 const kontoToggleBtn = document.getElementById("konto-toggle");
@@ -51,19 +102,41 @@ function kmelde(text, warnung = false) {
 function zeigeZustand() {
   const eingerichtet = supabase !== null;
 
+  // Während einer Passwort-Wiederherstellung gibt es zwar schon eine
+  // Sitzung, die Person soll aber erst das neue Passwort setzen, bevor sie
+  // als "angemeldet" zählt – deshalb bleibt hier der abgemeldete Bereich
+  // sichtbar (mit dem reset-Modus darin).
+  const zeigeAlsAngemeldet = nutzer !== null && !istPasswortWiederherstellung;
+
   kontoHinweis.hidden = eingerichtet;
-  kontoAbgemeldet.hidden = !eingerichtet || nutzer !== null;
-  kontoAngemeldet.hidden = !eingerichtet || nutzer === null;
+  kontoAbgemeldet.hidden = !eingerichtet || zeigeAlsAngemeldet;
+  kontoAngemeldet.hidden = !eingerichtet || !zeigeAlsAngemeldet;
 
   if (nutzer) kontoUserEl.textContent = nutzer.email;
 
   // Knopf oben rechts: Anfangsbuchstabe der Mail statt Symbol, sobald
   // jemand angemeldet ist – so sieht man den Zustand, ohne öffnen zu müssen.
-  const buchstabe = nutzer ? nutzer.email.trim().charAt(0) : "";
+  const buchstabe = zeigeAlsAngemeldet ? nutzer.email.trim().charAt(0) : "";
   kontoAvatarEl.innerHTML = buchstabe || PERSON_ICON;
   if (kontoAvatarGrossEl) kontoAvatarGrossEl.textContent = buchstabe;
-  kontoDotEl.hidden = !nutzer;
+  kontoDotEl.hidden = !zeigeAlsAngemeldet;
 }
+
+/* ---------- Zwischen Anmelden / Registrieren / ... wechseln ---------- */
+
+function zeigeModus(modus) {
+  Object.entries(kontoModusEls).forEach(([name, el]) => {
+    el.hidden = name !== modus;
+  });
+  kmelde("");
+}
+
+kontoZuForgot.addEventListener("click", () => zeigeModus("forgot"));
+kontoZuSignup.addEventListener("click", () => zeigeModus("signup"));
+kontoZuMagic.addEventListener("click", () => zeigeModus("magiclink"));
+kontoZuLoginVonSignup.addEventListener("click", () => zeigeModus("login"));
+kontoZuLoginVonForgot.addEventListener("click", () => zeigeModus("login"));
+kontoZuLoginVonMagic.addEventListener("click", () => zeigeModus("login"));
 
 /* ---------- Dropdown öffnen / schließen ---------- */
 
@@ -79,6 +152,9 @@ function dropdownPositionieren() {
 
 function dropdownOeffnen() {
   dropdownPositionieren();
+  // Nicht mitten in einer Passwort-Wiederherstellung auf "Anmelden"
+  // zurückspringen – dann soll der reset-Modus stehen bleiben.
+  if (!istPasswortWiederherstellung) zeigeModus("login");
   kontoDropdown.classList.add("ist-offen");
   kontoToggleBtn.setAttribute("aria-expanded", "true");
 }
@@ -138,34 +214,180 @@ async function initKonto() {
     return;
   }
 
-  const { data } = await supabase.auth.getSession();
-  nutzer = data.session ? data.session.user : null;
-  zeigeZustand();
-
-  // Nach dem Klick auf den Magic-Link kehrt der Nutzer angemeldet zurück
+  // Der Listener muss VOR der ersten Sitzungsprüfung registriert werden –
+  // sonst verpasst er das PASSWORD_RECOVERY-Ereignis, das direkt nach dem
+  // Klick auf den "Passwort vergessen"-Link ausgelöst wird.
   supabase.auth.onAuthStateChange((ereignis, session) => {
+    if (ereignis === "PASSWORD_RECOVERY") {
+      istPasswortWiederherstellung = true;
+      nutzer = session ? session.user : nutzer;
+      zeigeModus("reset");
+      dropdownOeffnen();
+      zeigeZustand();
+      kmelde("Bitte leg ein neues Passwort fest.");
+      return;
+    }
+
     const vorher = nutzer;
     nutzer = session ? session.user : null;
     zeigeZustand();
-    if (!vorher && nutzer) {
+    if (!vorher && nutzer && !istPasswortWiederherstellung) {
       kmelde(`Angemeldet als ${nutzer.email}.`);
       abgleichen();
     }
   });
 
+  const { data } = await supabase.auth.getSession();
+  nutzer = data.session ? data.session.user : null;
+  zeigeZustand();
   if (nutzer) abgleichen();
 }
 
-/* ---------- Anmelden / Abmelden ---------- */
+/* ---------- Anmelden / Registrieren / Passwort vergessen / Abmelden ---------- */
 
-kontoSendenBtn.addEventListener("click", async () => {
-  const mail = kontoEmail.value.trim();
-  if (!mail || !mail.includes("@")) {
+function gueltigeMail(text) {
+  return Boolean(text) && text.includes("@");
+}
+
+function passwortLangGenug(pw) {
+  return Boolean(pw) && pw.length >= MIN_PASSWORT_LAENGE;
+}
+
+// Anmelden mit E-Mail + Passwort
+kontoLoginSendenBtn.addEventListener("click", async () => {
+  const mail = kontoLoginEmail.value.trim();
+  const passwort = kontoLoginPasswort.value;
+
+  if (!gueltigeMail(mail)) {
+    kmelde("Bitte eine gültige E-Mail-Adresse eingeben.", true);
+    return;
+  }
+  if (!passwort) {
+    kmelde("Bitte dein Passwort eingeben.", true);
+    return;
+  }
+
+  kontoLoginSendenBtn.disabled = true;
+  kmelde("Wird angemeldet …");
+
+  const { error } = await supabase.auth.signInWithPassword({ email: mail, password: passwort });
+
+  kontoLoginSendenBtn.disabled = false;
+  // Bei Erfolg übernimmt onAuthStateChange die Meldung und den Abgleich.
+  if (error) kmelde(`Anmeldung fehlgeschlagen: ${error.message}`, true);
+});
+
+// Neues Konto registrieren
+kontoSignupSendenBtn.addEventListener("click", async () => {
+  const mail = kontoSignupEmail.value.trim();
+  const passwort = kontoSignupPasswort.value;
+  const passwort2 = kontoSignupPasswort2.value;
+
+  if (!gueltigeMail(mail)) {
+    kmelde("Bitte eine gültige E-Mail-Adresse eingeben.", true);
+    return;
+  }
+  if (!passwortLangGenug(passwort)) {
+    kmelde(`Das Passwort muss mindestens ${MIN_PASSWORT_LAENGE} Zeichen haben.`, true);
+    return;
+  }
+  if (passwort !== passwort2) {
+    kmelde("Die Passwörter stimmen nicht überein.", true);
+    return;
+  }
+
+  kontoSignupSendenBtn.disabled = true;
+  kmelde("Konto wird angelegt …");
+
+  const { data, error } = await supabase.auth.signUp({
+    email: mail,
+    password: passwort,
+    options: { emailRedirectTo: window.location.href.split("#")[0] },
+  });
+
+  kontoSignupSendenBtn.disabled = false;
+
+  if (error) {
+    kmelde(`Konnte nicht angelegt werden: ${error.message}`, true);
+    return;
+  }
+
+  // Ist die Bestätigungs-Mail bei Supabase aktiviert (Standardeinstellung),
+  // gibt es hier noch keine Sitzung – erst nach dem Klick auf den Link.
+  if (data.session) {
+    kmelde("Konto erstellt und angemeldet.");
+  } else {
+    kmelde("Fast fertig! Bestätige deine E-Mail-Adresse über den Link, den wir dir geschickt haben.");
+  }
+});
+
+// Passwort vergessen: Link zum Zurücksetzen anfordern
+kontoForgotSendenBtn.addEventListener("click", async () => {
+  const mail = kontoForgotEmail.value.trim();
+
+  if (!gueltigeMail(mail)) {
     kmelde("Bitte eine gültige E-Mail-Adresse eingeben.", true);
     return;
   }
 
-  kontoSendenBtn.disabled = true;
+  kontoForgotSendenBtn.disabled = true;
+  kmelde("Link wird verschickt …");
+
+  const { error } = await supabase.auth.resetPasswordForEmail(mail, {
+    redirectTo: window.location.href.split("#")[0],
+  });
+
+  kontoForgotSendenBtn.disabled = false;
+  kmelde(
+    error
+      ? `Konnte nicht verschickt werden: ${error.message}`
+      : "Falls ein Konto mit dieser E-Mail existiert, hast du eine Mail mit einem Link zum Zurücksetzen bekommen."
+  );
+});
+
+// Neues Passwort setzen (nach Klick auf den Reset-Link)
+kontoResetSendenBtn.addEventListener("click", async () => {
+  const passwort = kontoResetPasswort.value;
+  const passwort2 = kontoResetPasswort2.value;
+
+  if (!passwortLangGenug(passwort)) {
+    kmelde(`Das Passwort muss mindestens ${MIN_PASSWORT_LAENGE} Zeichen haben.`, true);
+    return;
+  }
+  if (passwort !== passwort2) {
+    kmelde("Die Passwörter stimmen nicht überein.", true);
+    return;
+  }
+
+  kontoResetSendenBtn.disabled = true;
+  kmelde("Neues Passwort wird gespeichert …");
+
+  const { error } = await supabase.auth.updateUser({ password: passwort });
+
+  kontoResetSendenBtn.disabled = false;
+
+  if (error) {
+    kmelde(`Fehlgeschlagen: ${error.message}`, true);
+    return;
+  }
+
+  istPasswortWiederherstellung = false;
+  kontoResetPasswort.value = "";
+  kontoResetPasswort2.value = "";
+  zeigeZustand();
+  kmelde("Neues Passwort gespeichert. Du bist angemeldet.");
+  abgleichen();
+});
+
+// Magic-Link ohne Passwort (Alternative zur normalen Anmeldung)
+kontoMagicSendenBtn.addEventListener("click", async () => {
+  const mail = kontoMagicEmail.value.trim();
+  if (!gueltigeMail(mail)) {
+    kmelde("Bitte eine gültige E-Mail-Adresse eingeben.", true);
+    return;
+  }
+
+  kontoMagicSendenBtn.disabled = true;
   kmelde("Link wird verschickt …");
 
   const { error } = await supabase.auth.signInWithOtp({
@@ -173,7 +395,7 @@ kontoSendenBtn.addEventListener("click", async () => {
     options: { emailRedirectTo: window.location.href.split("#")[0] },
   });
 
-  kontoSendenBtn.disabled = false;
+  kontoMagicSendenBtn.disabled = false;
   kmelde(
     error
       ? `Konnte nicht verschickt werden: ${error.message}`
@@ -185,7 +407,9 @@ kontoSendenBtn.addEventListener("click", async () => {
 kontoAbmeldenBtn.addEventListener("click", async () => {
   await supabase.auth.signOut();
   nutzer = null;
+  istPasswortWiederherstellung = false;
   zeigeZustand();
+  zeigeModus("login");
   kmelde("Abgemeldet. Die Handschrift bleibt in diesem Browser gespeichert.");
 });
 

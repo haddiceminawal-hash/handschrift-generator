@@ -97,8 +97,8 @@ Ohne Konto liegt die Handschrift nur im `localStorage` – also in genau einem
 Browser. Mit Konto liegt sie zusätzlich bei **Supabase** und kommt nach dem
 Anmelden auf jedem Gerät zurück.
 
-- **Anmeldung per Magic-Link**, kein Passwort. Was es nicht gibt, kann auch nicht
-  gestohlen oder falsch gespeichert werden.
+- **Zwei Wege, sich anzumelden**: klassisch mit E-Mail + Passwort (inkl.
+  Registrieren und "Passwort vergessen") oder per Magic-Link ohne Passwort.
 - Beim Anmelden wird **abgeglichen**: Liegt etwas im Konto, gewinnt das Konto.
   Liegt nur lokal etwas, wandert es ins Konto.
 - Nach jedem erfolgreichen Einscannen wird automatisch gesichert.
