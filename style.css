@@ -1030,3 +1030,105 @@ input[type="file"] {
   color: var(--text);
   font-weight: 700;
 }
+
+/* ---------- Roboter-Button: macht auf die KI-Funktion aufmerksam ---------- */
+
+.ki-roboter {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  width: 60px;
+  height: 60px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--indigo), var(--coral));
+  box-shadow: var(--shadow-btn);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  z-index: 250;
+}
+
+.ki-roboter:hover { filter: brightness(1.08); }
+
+/* Zwei verschachtelte Elemente, damit Schweben (vertikale Position) und
+   Winken (Drehung) unabhängig voneinander animiert werden können, ohne
+   sich gegenseitig zu überschreiben. */
+.ki-roboter-schweben {
+  display: block;
+  font-size: 1.7rem;
+  animation: ki-roboter-schweben 2.6s ease-in-out infinite;
+}
+
+.ki-roboter-winken {
+  display: block;
+  animation: ki-roboter-winken 4.5s ease-in-out infinite;
+}
+
+@keyframes ki-roboter-schweben {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes ki-roboter-winken {
+  0%, 78% { transform: rotate(0deg); }
+  81% { transform: rotate(-14deg); }
+  84% { transform: rotate(12deg); }
+  87% { transform: rotate(-10deg); }
+  90% { transform: rotate(8deg); }
+  93%, 100% { transform: rotate(0deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ki-roboter-schweben,
+  .ki-roboter-winken { animation: none; }
+}
+
+.ki-roboter-popup {
+  position: fixed;
+  bottom: 92px;
+  right: 22px;
+  width: min(300px, 88vw);
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card-lg);
+  padding: 20px;
+  z-index: 250;
+}
+
+.ki-roboter-popup[hidden] { display: none; }
+
+.ki-roboter-popup h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.ki-roboter-popup p {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.ki-roboter-popup-schliessen {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: var(--panel-bg-soft);
+  color: var(--text-soft);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ki-roboter-popup-schliessen:hover { color: var(--indigo); }
+
+@media (max-width: 480px) {
+  .ki-roboter { width: 52px; height: 52px; bottom: 16px; right: 16px; }
+  .ki-roboter-popup { bottom: 76px; right: 16px; }
+}

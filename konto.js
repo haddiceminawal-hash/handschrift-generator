@@ -39,12 +39,19 @@ let rollenVorlageGesetzt = false;
 let gewaehlteRolle = null;
 
 // Vorschau ohne eigenes Konto: an die URL "?vorschau=lehrer" bzw.
-// "?vorschau=schueler" anhängen, um die jeweilige Ansicht lokal zu sehen,
-// ohne sich anzumelden oder Supabase einzurichten. Rein kosmetisch – die
-// echte KI-Generierung bleibt serverseitig über die profiles-Tabelle
-// abgesichert und lässt sich dadurch nicht umgehen, das hier überschreibt
-// nur, was die Oberfläche anzeigt.
-const vorschauRolle = new URLSearchParams(window.location.search).get("vorschau");
+// "?vorschau=schueler" anhängen (oder Klick auf den Roboter-Button, siehe
+// unten), um die jeweilige Ansicht zu sehen, ohne sich anzumelden oder
+// Supabase einzurichten. Rein kosmetisch – die echte KI-Generierung bleibt
+// serverseitig über die profiles-Tabelle abgesichert und lässt sich
+// dadurch nicht umgehen, das hier überschreibt nur, was die Oberfläche
+// anzeigt. Bewusst kein const mehr: der Roboter-Button setzt das zur
+// Laufzeit, ohne die Seite neu zu laden.
+let vorschauRolle = new URLSearchParams(window.location.search).get("vorschau");
+
+window.setzeVorschauRolle = function (rolle) {
+  vorschauRolle = rolle;
+  zeigeRollenUI();
+};
 
 /* ---------- Elemente ---------- */
 
@@ -576,5 +583,54 @@ window.kontoAutoSichern = async function (daten) {
   const fehler = await sichern(daten);
   kmelde(fehler ? `Automatisches Sichern fehlgeschlagen: ${fehler.message}` : "Automatisch im Konto gesichert.", Boolean(fehler));
 };
+
+/* ---------- Roboter-Button: macht auf die KI-Funktion aufmerksam ---------- */
+
+// Öffnet nur bei Klick – kein automatisches Popup nach ein paar Sekunden,
+// das wäre für Erstbesucher:innen (z. B. beim Portfolio-Ansehen) eher
+// aufdringlich als einladend.
+const kiRoboterBtn = document.getElementById("ki-roboter");
+const kiRoboterPopup = document.getElementById("ki-roboter-popup");
+const kiRoboterSchliessenBtn = document.getElementById("ki-roboter-popup-schliessen");
+const kiRoboterVorschauBtn = document.getElementById("ki-roboter-vorschau-btn");
+
+function kiRoboterPopupOeffnen() {
+  kiRoboterPopup.hidden = false;
+  kiRoboterBtn.setAttribute("aria-expanded", "true");
+}
+
+function kiRoboterPopupSchliessen() {
+  kiRoboterPopup.hidden = true;
+  kiRoboterBtn.setAttribute("aria-expanded", "false");
+}
+
+kiRoboterBtn.addEventListener("click", (ev) => {
+  ev.stopPropagation();
+  if (kiRoboterPopup.hidden) kiRoboterPopupOeffnen();
+  else kiRoboterPopupSchliessen();
+});
+
+kiRoboterSchliessenBtn.addEventListener("click", (ev) => {
+  ev.stopPropagation();
+  kiRoboterPopupSchliessen();
+});
+
+kiRoboterPopup.addEventListener("click", (ev) => ev.stopPropagation());
+
+document.addEventListener("click", (ev) => {
+  if (!kiRoboterPopup.hidden && !kiRoboterPopup.contains(ev.target) && ev.target !== kiRoboterBtn) {
+    kiRoboterPopupSchliessen();
+  }
+});
+
+kiRoboterVorschauBtn.addEventListener("click", () => {
+  window.setzeVorschauRolle("lehrer");
+  kiRoboterPopupSchliessen();
+  const panel = document.getElementById("ki-generator-panel");
+  if (panel) {
+    panel.open = true;
+    panel.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+});
 
 initKonto();

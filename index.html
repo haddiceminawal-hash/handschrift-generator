@@ -363,6 +363,26 @@ Bis bald!</textarea>
   <a href="datenschutz.html">Datenschutz</a>
 </footer>
 
+<!-- Macht auf den KI-Arbeitsblatt-Generator für Lehrkräfte aufmerksam.
+     Öffnet nur bei Klick, kein automatisches Popup (siehe konto.js). -->
+<button type="button" id="ki-roboter" class="ki-roboter" aria-expanded="false" aria-label="KI-Funktion für Lehrkräfte ansehen">
+  <span class="ki-roboter-schweben">
+    <span class="ki-roboter-winken" aria-hidden="true">🤖</span>
+  </span>
+</button>
+
+<div id="ki-roboter-popup" class="ki-roboter-popup" hidden>
+  <button type="button" id="ki-roboter-popup-schliessen" class="ki-roboter-popup-schliessen" aria-label="Schließen">×</button>
+  <h3>🪄 KI-Arbeitsblatt-Generator</h3>
+  <p>
+    Für Lehrkräfte: Thema eingeben, KI erzeugt einen passenden Übungstext –
+    direkt als Handschrift aufs Blatt.
+  </p>
+  <button type="button" id="ki-roboter-vorschau-btn" class="btn btn-primary btn-small btn-block">
+    Als Lehrer*in ansehen
+  </button>
+</div>
+
 <script src="config.js"></script>
 <script src="script.js"></script>
 <script src="scanner.js"></script>
