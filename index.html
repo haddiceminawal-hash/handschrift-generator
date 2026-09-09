@@ -56,20 +56,18 @@ vielen Dank für das Rezept! Der Apfelkuchen ist genau so geworden wie bei dir. 
 Bis bald!</textarea>
     </label>
 
+    <div class="field field-wide">
+      <span class="field-label">Papier</span>
+      <div id="paper-picker" class="paper-picker" role="radiogroup" aria-label="Papier auswählen">
+        <!-- wird in script.js gefüllt, jede Karte mit Vorschaubild -->
+      </div>
+    </div>
+
     <div class="controls">
 
       <label class="field">
         <span class="field-label">Schriftart</span>
         <select id="font-family"><!-- wird in script.js gefüllt --></select>
-      </label>
-
-      <label class="field">
-        <span class="field-label">Papier</span>
-        <select id="paper-type">
-          <option value="lined" selected>Liniert</option>
-          <option value="grid">Kariert</option>
-          <option value="blank">Blanko</option>
-        </select>
       </label>
 
       <label class="field">
@@ -82,7 +80,7 @@ Bis bald!</textarea>
         </select>
       </label>
 
-      <label class="field">
+      <label class="field field-wide">
         <span class="field-label">Schriftgröße <output id="size-out">22</output></span>
         <input type="range" id="font-size" min="14" max="34" step="1" value="22">
       </label>
@@ -95,9 +93,18 @@ Bis bald!</textarea>
     </div>
 
     <div class="actions">
-      <button type="button" id="reshuffle" class="btn btn-secondary">🎲 Neu würfeln</button>
-      <button type="button" id="download" class="btn btn-primary">⬇︎ Als Bild speichern</button>
+      <button type="button" id="reshuffle" class="btn btn-secondary btn-block">🎲 Neu würfeln</button>
     </div>
+
+    <div class="actions">
+      <button type="button" id="download" class="btn btn-secondary">🖼️ Als PNG</button>
+      <button type="button" id="download-pdf" class="btn btn-primary">📄 Für GoodNotes</button>
+    </div>
+
+    <p class="hinweis">
+      GoodNotes hat kein offenes Dateiformat – eigene Vorlagen kommen dort
+      immer als PDF hinein (in GoodNotes: Importieren → Als neues Dokument).
+    </p>
 
     <p id="status" class="status" role="status"></p>
 

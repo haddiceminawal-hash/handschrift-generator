@@ -8,8 +8,56 @@
 
 const PAGE = { w: 794, h: 1123 };   // A4 in Pixeln (96 dpi)
 const SCALE = 2;                    // doppelte Auflösung für scharfen Export
-const MARGIN = { top: 96, right: 56, bottom: 72, left: 74 };
+const BASE_MARGIN = { top: 96, right: 56, bottom: 72, left: 74 };
 const GRID = 19;                    // Karo-Größe (5 mm bei 96 dpi)
+
+// MARGIN ist bewusst veränderlich (kein const): render() setzt sie vor
+// jedem Zeichnen neu, je nach gewähltem Papier – Cornell-Notizen brauchen
+// z.B. mehr Platz links (Stichwort-Spalte) und unten (Zusammenfassung).
+// Alle Zeichenfunktionen lesen MARGIN einfach aus dieser gemeinsamen Stelle.
+let MARGIN = BASE_MARGIN;
+
+/* -------------------------------------------------------------
+   Die verfügbaren Papiersorten – orientiert an den Standard-Vorlagen,
+   wie man sie aus GoodNotes & Co. kennt.
+
+   "art" bestimmt, welche Zeichenfunktion greift (siehe zeichnePapierGrund).
+   "spacing" staucht oder streckt den Zeilenabstand bei linierten Sorten.
+------------------------------------------------------------- */
+
+const PAPIERE = [
+  { id: "lined",        label: "Liniert",         art: "lined" },
+  { id: "lined-narrow",  label: "Liniert schmal",  art: "lined",   spacing: 0.78 },
+  { id: "lined-wide",    label: "Liniert breit",   art: "lined",   spacing: 1.35 },
+  { id: "grid",          label: "Kariert",         art: "grid" },
+  { id: "dotted",        label: "Punktraster",     art: "dotted" },
+  { id: "cornell",       label: "Cornell-Notizen", art: "cornell" },
+  { id: "blank",         label: "Blanko",          art: "blank" },
+];
+
+function papierInfo(id) {
+  return PAPIERE.find((p) => p.id === id) || PAPIERE[0];
+}
+
+// Cornell-Notizen brauchen mehr Rand: links für die Stichwort-Spalte,
+// unten für die Zusammenfassungs-Zeile.
+function margeFuer(paperId) {
+  if (paperId === "cornell") {
+    return { top: BASE_MARGIN.top, right: BASE_MARGIN.right, bottom: BASE_MARGIN.bottom + 118, left: 190 };
+  }
+  return BASE_MARGIN;
+}
+
+function berechneLineHeight(paperId, fontSize) {
+  const info = papierInfo(paperId);
+  let lh = Math.round(fontSize * 1.85 * (info.spacing || 1));
+  // Bei Karo- und Punktraster auf das Raster einrasten, sonst schweben
+  // die Zeilen zwischen den Linien.
+  if (info.art === "grid" || info.art === "dotted") {
+    lh = Math.max(GRID * 2, Math.round(lh / GRID) * GRID);
+  }
+  return lh;
+}
 
 /* -------------------------------------------------------------
    Die verfügbaren Schriften.
@@ -71,6 +119,42 @@ function fontMeta(name) {
   return FONTS.find((f) => f.name === name) || FONTS[0];
 }
 
+// Papier-Auswähler aus PAPIERE aufbauen – jede Karte zeigt ein kleines
+// Vorschaubild statt nur eines Namens, damit man vorher sieht, wie die
+// Vorlage aussieht.
+function buildPaperPicker() {
+  PAPIERE.forEach((p, i) => {
+    const karte = document.createElement("button");
+    karte.type = "button";
+    karte.className = "paper-karte";
+    karte.dataset.papier = p.id;
+    karte.setAttribute("role", "radio");
+    karte.setAttribute("aria-checked", i === 0 ? "true" : "false");
+    if (i === 0) karte.classList.add("ausgewaehlt");
+
+    const img = document.createElement("img");
+    img.src = papierThumbnail(p.id);
+    img.alt = "";
+
+    const label = document.createElement("span");
+    label.textContent = p.label;
+
+    karte.append(img, label);
+    karte.addEventListener("click", () => waehlePapier(p.id));
+    paperPickerEl.appendChild(karte);
+  });
+}
+
+function waehlePapier(id) {
+  ausgewaehltesPapier = id;
+  [...paperPickerEl.children].forEach((karte) => {
+    const gewaehlt = karte.dataset.papier === id;
+    karte.classList.toggle("ausgewaehlt", gewaehlt);
+    karte.setAttribute("aria-checked", String(gewaehlt));
+  });
+  scheduleRender();
+}
+
 /* ---------- Elemente einsammeln ---------- */
 
 const canvas = document.getElementById("paper");
@@ -78,7 +162,7 @@ const ctx = canvas.getContext("2d");
 
 const inputEl = document.getElementById("input-text");
 const fontEl = document.getElementById("font-family");
-const paperEl = document.getElementById("paper-type");
+const paperPickerEl = document.getElementById("paper-picker");
 const inkEl = document.getElementById("ink-color");
 const sizeEl = document.getElementById("font-size");
 const messEl = document.getElementById("messiness");
@@ -87,6 +171,9 @@ const messOut = document.getElementById("mess-out");
 const statusEl = document.getElementById("status");
 const reshuffleBtn = document.getElementById("reshuffle");
 const downloadBtn = document.getElementById("download");
+const downloadPdfBtn = document.getElementById("download-pdf");
+
+let ausgewaehltesPapier = PAPIERE[0].id;
 
 let seed = Math.floor(Math.random() * 100000);
 
@@ -127,9 +214,107 @@ function buildNoise() {
   return ctx.createPattern(tile, "repeat");
 }
 
-function drawPaper(paper, lineHeight) {
-  ctx.fillStyle = "#fdfdf7";
-  ctx.fillRect(0, 0, PAGE.w, PAGE.h);
+function zeichneLinien(context, margin, lineHeight) {
+  context.strokeStyle = "#9fb6d8";
+  context.lineWidth = 1;
+  for (let y = margin.top; y <= PAGE.h - margin.bottom; y += lineHeight) {
+    context.beginPath();
+    context.moveTo(40, y + 0.5);
+    context.lineTo(PAGE.w - 40, y + 0.5);
+    context.stroke();
+  }
+  // roter Rand links
+  context.strokeStyle = "#e0a3a3";
+  context.beginPath();
+  context.moveTo(margin.left - 16, 30);
+  context.lineTo(margin.left - 16, PAGE.h - 30);
+  context.stroke();
+}
+
+function zeichneKaros(context) {
+  context.strokeStyle = "#b9cbe4";
+  context.lineWidth = 0.8;
+  for (let x = 40; x <= PAGE.w - 40; x += GRID) {
+    context.beginPath();
+    context.moveTo(x + 0.5, 40);
+    context.lineTo(x + 0.5, PAGE.h - 40);
+    context.stroke();
+  }
+  for (let y = 40; y <= PAGE.h - 40; y += GRID) {
+    context.beginPath();
+    context.moveTo(40, y + 0.5);
+    context.lineTo(PAGE.w - 40, y + 0.5);
+    context.stroke();
+  }
+}
+
+function zeichnePunkte(context) {
+  context.fillStyle = "#9fb0c9";
+  for (let x = 40; x <= PAGE.w - 40; x += GRID) {
+    for (let y = 40; y <= PAGE.h - 40; y += GRID) {
+      context.beginPath();
+      context.arc(x, y, 1.3, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+}
+
+// Cornell-Methode: Stichwort-Spalte links, Notizen in der Mitte,
+// Zusammenfassung unten – eine der Standard-Vorlagen in GoodNotes & Co.
+function zeichneCornell(context, margin, lineHeight) {
+  const cueX = margin.left - 16;
+  const summaryY = PAGE.h - margin.bottom;
+
+  context.strokeStyle = "#9fb6d8";
+  context.lineWidth = 1;
+  for (let y = margin.top; y <= summaryY; y += lineHeight) {
+    context.beginPath();
+    context.moveTo(margin.left, y + 0.5);
+    context.lineTo(PAGE.w - 40, y + 0.5);
+    context.stroke();
+  }
+
+  context.strokeStyle = "#c9a6a6";
+  context.lineWidth = 1.2;
+  context.beginPath();
+  context.moveTo(cueX, 30);
+  context.lineTo(cueX, PAGE.h - 30);
+  context.stroke();
+  context.beginPath();
+  context.moveTo(40, summaryY + 0.5);
+  context.lineTo(PAGE.w - 40, summaryY + 0.5);
+  context.stroke();
+
+  context.fillStyle = "#a9a2c4";
+  context.font = "italic 13px Inter, sans-serif";
+  context.textBaseline = "alphabetic";
+  context.save();
+  context.translate(24, margin.top + 4);
+  context.rotate(-Math.PI / 2);
+  context.fillText("STICHWORTE", 0, 0);
+  context.restore();
+  context.fillText("ZUSAMMENFASSUNG", 44, summaryY + 22);
+}
+
+// Nur Hintergrund + Linien, ohne Körnung/Schatten – wird sowohl für das
+// große Blatt als auch für die kleinen Vorschaubilder im Papier-Auswähler
+// benutzt (dort wären Körnung und Schatten bei der geringen Größe eh
+// nicht zu erkennen, kosten aber Rechenzeit für sieben Vorschauen).
+function zeichnePapierGrund(context, paper, lineHeight, margin) {
+  context.fillStyle = "#fdfdf7";
+  context.fillRect(0, 0, PAGE.w, PAGE.h);
+
+  context.save();
+  const art = papierInfo(paper).art;
+  if (art === "lined") zeichneLinien(context, margin, lineHeight);
+  else if (art === "grid") zeichneKaros(context);
+  else if (art === "dotted") zeichnePunkte(context);
+  else if (art === "cornell") zeichneCornell(context, margin, lineHeight);
+  context.restore();
+}
+
+function drawPaper(paper, lineHeight, margin) {
+  zeichnePapierGrund(ctx, paper, lineHeight, margin);
 
   // Körnung
   if (!noisePattern) noisePattern = buildNoise();
@@ -137,40 +322,6 @@ function drawPaper(paper, lineHeight) {
   ctx.globalAlpha = 0.045;
   ctx.fillStyle = noisePattern;
   ctx.fillRect(0, 0, PAGE.w, PAGE.h);
-  ctx.restore();
-
-  ctx.save();
-  if (paper === "lined") {
-    ctx.strokeStyle = "#9fb6d8";
-    ctx.lineWidth = 1;
-    for (let y = MARGIN.top; y <= PAGE.h - MARGIN.bottom; y += lineHeight) {
-      ctx.beginPath();
-      ctx.moveTo(40, y + 0.5);
-      ctx.lineTo(PAGE.w - 40, y + 0.5);
-      ctx.stroke();
-    }
-    // roter Rand links
-    ctx.strokeStyle = "#e0a3a3";
-    ctx.beginPath();
-    ctx.moveTo(MARGIN.left - 16, 30);
-    ctx.lineTo(MARGIN.left - 16, PAGE.h - 30);
-    ctx.stroke();
-  } else if (paper === "grid") {
-    ctx.strokeStyle = "#b9cbe4";
-    ctx.lineWidth = 0.8;
-    for (let x = 40; x <= PAGE.w - 40; x += GRID) {
-      ctx.beginPath();
-      ctx.moveTo(x + 0.5, 40);
-      ctx.lineTo(x + 0.5, PAGE.h - 40);
-      ctx.stroke();
-    }
-    for (let y = 40; y <= PAGE.h - 40; y += GRID) {
-      ctx.beginPath();
-      ctx.moveTo(40, y + 0.5);
-      ctx.lineTo(PAGE.w - 40, y + 0.5);
-      ctx.stroke();
-    }
-  }
   ctx.restore();
 
   // ganz leichter Schatten zu den Rändern hin
@@ -182,6 +333,22 @@ function drawPaper(paper, lineHeight) {
   vig.addColorStop(1, "rgba(60,50,35,0.07)");
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, PAGE.w, PAGE.h);
+}
+
+// Kleines Vorschaubild für eine Papiersorte – für den Auswähler unten.
+function papierThumbnail(paperId) {
+  const w = 108;
+  const h = Math.round((w * PAGE.h) / PAGE.w);
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  const tctx = c.getContext("2d");
+  tctx.scale(w / PAGE.w, h / PAGE.h);
+
+  const lineHeight = berechneLineHeight(paperId, 22);
+  zeichnePapierGrund(tctx, paperId, lineHeight, margeFuer(paperId));
+
+  return c.toDataURL("image/png");
 }
 
 /* ---------- Text in Zeilen umbrechen ---------- */
@@ -451,14 +618,11 @@ async function render() {
   const own = family === "__own__" && ownFont !== null;
   const meta = own ? FONTS[0] : fontMeta(family);
   const drawSize = Math.round(fontSize * meta.adjust);
-  const paper = paperEl.value;
+  const paper = ausgewaehltesPapier;
   const ink = inkEl.value;
 
-  // Zeilenabstand – bei kariertem Papier auf die Karos einrasten
-  let lineHeight = Math.round(fontSize * 1.85);
-  if (paper === "grid") {
-    lineHeight = Math.max(GRID * 2, Math.round(lineHeight / GRID) * GRID);
-  }
+  MARGIN = margeFuer(paper);
+  const lineHeight = berechneLineHeight(paper, fontSize);
 
   // Schrift ZUERST laden – sonst blitzt beim Wechsel kurz ein leeres Blatt auf,
   // weil das Papier schon gemalt wäre, der Text aber noch fehlt.
@@ -475,7 +639,7 @@ async function render() {
   canvas.height = PAGE.h * SCALE;
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
 
-  drawPaper(paper, lineHeight);
+  drawPaper(paper, lineHeight, MARGIN);
 
   // Schriftart muss nach dem Größenwechsel neu gesetzt werden
   ctx.font = `${drawSize}px "${meta.name}", "Bradley Hand", cursive`;
@@ -521,7 +685,7 @@ function scheduleRender() {
   timer = setTimeout(render, 80);
 }
 
-[inputEl, fontEl, paperEl, inkEl, sizeEl, messEl].forEach((el) => {
+[inputEl, fontEl, inkEl, sizeEl, messEl].forEach((el) => {
   el.addEventListener("input", scheduleRender);
 });
 
@@ -541,6 +705,39 @@ downloadBtn.addEventListener("click", () => {
   }, "image/png");
 });
 
+/* -------------------------------------------------------------
+   Als PDF speichern (für GoodNotes)
+
+   GoodNotes hat kein offenes, dokumentiertes Dateiformat – eine eigene
+   ".goodnotes"-Datei von außen zu bauen wäre nur eine kaputte Attrappe,
+   die dort gar nicht aufginge. Der tatsächliche Weg, den auch gekaufte
+   GoodNotes-Vorlagen gehen: eine PDF-Datei, die man importiert
+   (Importieren -> Als neues Dokument) und dann beschreibt. Das Blatt ist
+   schon als A4-Seite aufgebaut, deshalb reicht es, das fertige Bild in
+   eine einzelne PDF-Seite derselben Größe zu packen.
+------------------------------------------------------------- */
+
+downloadPdfBtn.addEventListener("click", async () => {
+  const textVorher = downloadPdfBtn.textContent;
+  downloadPdfBtn.disabled = true;
+  downloadPdfBtn.textContent = "Wird erstellt …";
+
+  try {
+    const { jsPDF } = await import("https://esm.sh/jspdf@2.5.2");
+    const bild = canvas.toDataURL("image/jpeg", 0.92);
+    const pdf = new jsPDF({ unit: "px", format: [PAGE.w, PAGE.h] });
+    pdf.addImage(bild, "JPEG", 0, 0, PAGE.w, PAGE.h);
+    pdf.save("handschrift.pdf");
+  } catch (err) {
+    statusEl.dataset.warn = "true";
+    statusEl.textContent = "PDF konnte nicht erstellt werden – Internetverbindung prüfen.";
+  } finally {
+    downloadPdfBtn.disabled = false;
+    downloadPdfBtn.textContent = textVorher;
+  }
+});
+
 buildFontSelect();
+buildPaperPicker();
 refreshOutputs();
 render();

@@ -10,10 +10,11 @@ geschrieben. Läuft komplett im Browser – ohne Server, ohne Installation.
 - **22 Schriftarten** in drei Gruppen (Druckschrift, Schreibschrift, Kalligrafie)
 - **Eigene Handschrift einlesen** – Vorlage ausdrucken, ausfüllen, abfotografieren
 - **Konto** (optional) – Handschrift bleibt geräteübergreifend erhalten
-- Drei Papiersorten (liniert, kariert, blanko)
+- **7 Papiervorlagen** mit Bildvorschau zum Anklicken (liniert in drei
+  Abständen, kariert, Punktraster, Cornell-Notizen, blanko)
 - Regler für Schriftgröße und „Unordentlichkeit"
 - Vier Tintenfarben
-- Download als PNG in A4-Auflösung (1588 × 2246 px, druckbar)
+- Download als PNG (1588 × 2246 px) oder als **PDF für GoodNotes**
 - Automatischer Zeilenumbruch inkl. Silbentrennung bei langen Wörtern
 
 ## Wie die Handschrift entsteht
@@ -40,13 +41,34 @@ nicht gewürfelt. Sonst würde sich beim Tippen bei jedem Tastendruck das ganze
 Blatt neu anordnen. So bleibt alles ruhig stehen – und der Button
 „Neu würfeln" ändert einfach den Startwert.
 
+## Papiervorlagen & GoodNotes-Export
+
+Der Papier-Auswähler zeigt für jede Vorlage ein kleines Vorschaubild statt
+nur eines Namens – man sieht vorher, wie das Blatt aussieht. Jede Vorlage
+hat eine eigene Zeichenfunktion (`zeichneLinien`, `zeichneKaros`,
+`zeichnePunkte`, `zeichneCornell`), die sowohl für das große Blatt als auch
+für das jeweilige Vorschaubild benutzt wird (`zeichnePapierGrund`).
+
+Cornell-Notizen brauchen mehr Rand als die anderen Vorlagen (Stichwort-Spalte
+links, Zusammenfassung unten). Deshalb ist `MARGIN` in `script.js` bewusst
+keine feste Konstante, sondern wird vor jedem Zeichnen passend zur gewählten
+Vorlage neu gesetzt (`margeFuer()`).
+
+**Zum GoodNotes-Button:** GoodNotes hat kein offenes, dokumentiertes
+Dateiformat – eine echte `.goodnotes`-Datei von außen zu bauen wäre nur eine
+kaputte Attrappe. Der Button erzeugt deshalb ein **PDF**, denn das ist auch
+der Weg, den gekaufte GoodNotes-Vorlagen tatsächlich gehen: in GoodNotes
+importieren (Importieren → Als neues Dokument) und direkt draufschreiben.
+Die PDF-Erzeugung übernimmt [jsPDF](https://github.com/parallax/jsPDF), das
+wie Supabase erst bei Bedarf per `import()` nachgeladen wird.
+
 ## Aufbau
 
 | Datei | Inhalt |
 |---|---|
 | `index.html` | Aufbau der Seite |
 | `style.css` | Gestaltung, inkl. Dark Mode |
-| `script.js` | Zeichen-Engine |
+| `script.js` | Zeichen-Engine, Papiervorlagen, PDF-Export |
 | `scanner.js` | Vorlage, Foto-Entzerrung, Buchstaben-Extraktion |
 | `konto.js` | Anmeldung und Sicherung bei Supabase |
 | `config.js` | Zugangsdaten für Supabase (leer = App läuft ohne Konto) |
@@ -111,8 +133,7 @@ funktioniert alles andere unverändert weiter.
 
 ## Nächste Schritte
 
-- [ ] Mehrseitige Texte
-- [ ] Export als PDF
+- [ ] Mehrseitige Texte (auch als mehrseitiges PDF)
 - [ ] Ecken automatisch finden, statt sie anzuklicken
 - [ ] Mehrere Varianten pro Buchstabe (zweite Vorlagenseite)
 - [ ] Impressum & Datenschutzerklärung, bevor echte Nutzer dazukommen
