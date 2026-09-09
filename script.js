@@ -158,7 +158,12 @@ function waehlePapier(id) {
 /* ---------- Elemente einsammeln ---------- */
 
 const canvas = document.getElementById("paper");
-const ctx = canvas.getContext("2d");
+let ctx = canvas.getContext("2d");
+// ctx ist bewusst kein const mehr: Bei mehreren Seiten zeigt ctx beim
+// Zeichnen nacheinander auf den jeweiligen Seiten-Canvas (siehe render()).
+// Alle Zeichenfunktionen (drawLoose, drawJoined, drawOwn, ...) greifen auf
+// dieses gemeinsame ctx zu, statt dass jede einzeln einen Context-Parameter
+// bräuchte.
 
 const inputEl = document.getElementById("input-text");
 const fontEl = document.getElementById("font-family");
@@ -172,6 +177,68 @@ const statusEl = document.getElementById("status");
 const reshuffleBtn = document.getElementById("reshuffle");
 const downloadBtn = document.getElementById("download");
 const downloadPdfBtn = document.getElementById("download-pdf");
+const addPageBtn = document.getElementById("add-page");
+
+/* -------------------------------------------------------------
+   Seiten
+
+   Ein Dokument kann aus mehreren A4-Seiten bestehen. Jede Seite hat
+   ihren eigenen <canvas> und ihre eigene Klick-Ebene für den Editor
+   (siehe editor.js) – beide liegen in seitenCanvasListe/seitenLayerListe,
+   Index 0 ist die von Anfang an in index.html vorhandene erste Seite.
+
+   mindestSeiten wächst nur über den "Seite hinzufügen"-Button. Reicht
+   der Platz nicht (weil Text über das Seitenende hinausläuft), entstehen
+   in render() automatisch weitere Seiten – die tatsächliche Seitenzahl
+   ist also immer max(mindestSeiten, tatsächlich benötigte Seiten).
+------------------------------------------------------------- */
+
+let mindestSeiten = 1;
+let letzteSeitenAnzahl = 1;
+
+const pageWrapEl = document.getElementById("page-wrap");
+const seitenCanvasListe = [canvas];
+const seitenLayerListe = [document.getElementById("text-layer")];
+
+function richteSeitenEin(n) {
+  while (seitenCanvasListe.length < n) {
+    const i = seitenCanvasListe.length;
+
+    const surface = document.createElement("div");
+    surface.className = "page-surface";
+    surface.dataset.seite = i;
+
+    const label = document.createElement("div");
+    label.className = "page-label";
+    label.textContent = `Seite ${i + 1}`;
+
+    const c = document.createElement("canvas");
+    c.className = "paper-canvas";
+    c.setAttribute("aria-label", `Vorschau des handgeschriebenen Blattes, Seite ${i + 1}`);
+
+    const layer = document.createElement("div");
+    layer.className = "text-layer";
+    layer.dataset.seite = i;
+
+    surface.append(label, c, layer);
+    pageWrapEl.appendChild(surface);
+
+    seitenCanvasListe.push(c);
+    seitenLayerListe.push(layer);
+  }
+
+  while (seitenCanvasListe.length > n) {
+    seitenCanvasListe.pop().closest(".page-surface").remove();
+    seitenLayerListe.pop();
+  }
+
+  pageWrapEl.classList.toggle("mehrseitig", n > 1);
+}
+
+addPageBtn.addEventListener("click", () => {
+  mindestSeiten++;
+  render();
+});
 
 let ausgewaehltesPapier = PAPIERE[0].id;
 
@@ -190,12 +257,19 @@ let ownFont = null;
    bearbeitet man Textfeld 1 direkt auf dem Blatt, wandert der neue Text
    auch zurück in die Seitenleiste).
 
-   x/y sind die Position der ersten Zeile (in Seiten-Pixeln, wie MARGIN),
-   w ist die Breite, an der der Text umbricht.
+   Jeder Block hat ein "type": "text" (Standard) oder "image" (Bild/
+   Unterschrift, siehe editor.js). Bei Bild-Blöcken zeigt "img" auf das
+   bereits geladene HTMLImageElement.
+
+   x/y sind die Position der ersten Zeile bzw. der linken oberen Ecke
+   (in Seiten-Pixeln, wie MARGIN), w ist die Breite (bei Text: wo
+   umgebrochen wird). "seite" ist die Seite, auf der der Block beginnt
+   (0-indiziert) – läuft Text darüber hinaus, wird automatisch auf der
+   nächsten Seite weitergeschrieben, ohne dass sich block.seite ändert.
 ------------------------------------------------------------- */
 
 let bloecke = [
-  { id: 1, text: inputEl.value, x: BASE_MARGIN.left, y: BASE_MARGIN.top, w: 664 },
+  { id: 1, type: "text", text: inputEl.value, x: BASE_MARGIN.left, y: BASE_MARGIN.top, w: 664, seite: 0 },
 ];
 let naechsteBlockId = 2;
 
@@ -607,17 +681,25 @@ function drawOwn(line, li, x, baseY, wobbleAt, opts) {
   return x;
 }
 
-// "origin" ist die Position des Textfelds ({x, y, blockSalt}) – jedes
-// Textfeld bekommt über blockSalt sein eigenes Wackel-Muster, sonst
+// "origin" ist die Position des Textfelds ({x, y, blockSalt, liStart}) –
+// jedes Textfeld bekommt über blockSalt sein eigenes Wackel-Muster, sonst
 // sähen zwei Textfelder in derselben Zeile identisch verzerrt aus.
+//
+// "lines" ist bereits genau der Ausschnitt, der auf DIESE Seite gehört –
+// die Aufteilung passiert im Layout-Pass in render(). liStart ist die
+// Zeilennummer, bei der dieser Ausschnitt im vollständigen Text des
+// Blocks beginnt: läuft ein Textfeld über mehrere Seiten, sorgt das
+// dafür, dass Welle/Schräglage nahtlos weitergehen statt auf der neuen
+// Seite wieder bei Zeile 0 anzufangen.
 function drawLines(lines, origin, opts) {
-  const { lineHeight, mess, maxLines, joined } = opts;
+  const { lineHeight, mess, joined } = opts;
   const salt = origin.blockSalt || 0;
-  const shown = lines.slice(0, maxLines);
+  const liBasis = origin.liStart || 0;
   const vollOpts = { ...opts, blockSalt: salt };
 
-  shown.forEach((line, li) => {
-    const baseY = origin.y + li * lineHeight;
+  lines.forEach((line, liLokal) => {
+    const li = liLokal + liBasis;
+    const baseY = origin.y + liLokal * lineHeight;   // Position bleibt Seiten-relativ
 
     // Jede Zeile bekommt eine eigene leichte Welle und Schräglage –
     // von Hand schreibt niemand exakt waagerecht.
@@ -637,7 +719,7 @@ function drawLines(lines, origin, opts) {
     }
   });
 
-  return shown.length;
+  return lines.length;
 }
 
 /* ---------- Alles zusammenbauen ---------- */
@@ -667,66 +749,124 @@ async function render() {
     /* Schrift nicht verfügbar – dann greift die Ersatzschrift */
   }
 
-  // Canvas auf A4 setzen (intern doppelt so groß für scharfen Export)
-  canvas.width = PAGE.w * SCALE;
-  canvas.height = PAGE.h * SCALE;
-  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
-
-  drawPaper(paper, lineHeight, MARGIN);
-
-  // Schriftart muss nach dem Größenwechsel neu gesetzt werden
+  // Für den Layout-Pass (Zeilenumbruch, Seitenaufteilung) genügt
+  // irgendein Context mit der richtigen Schrift gesetzt – welcher Canvas
+  // das ist, spielt für reine Textmessung keine Rolle. Erst im Mal-Pass
+  // weiter unten zeigt ctx nacheinander auf die einzelnen Seiten-Canvas.
+  ctx = seitenCanvasListe[0].getContext("2d");
   ctx.font = `${drawSize}px "${meta.name}", "Bradley Hand", cursive`;
   ctx.textBaseline = "alphabetic";
 
   const eigeneMessung = own ? (t) => measureOwn(t, drawSize) : null;
-  const seitenUnten = PAGE.h - 40;   // wie weit ein Textfeld maximal runterreichen darf
+  const seitenUnten = PAGE.h - 40;
 
-  const blockBoxen = [];
-  const ueberlaufend = [];
-
-  bloecke.forEach((block, index) => {
-    const lines = wrapText(block.text, block.w, eigeneMessung);
-
-    // Ohne von Hand gesetzte Höhe (block.h) richtet sich die maximale
-    // Zeilenzahl nur nach dem Seitenende. Wurde das Textfeld per Ziehen
-    // niedriger gemacht, begrenzt zusätzlich block.h – überschüssige
-    // Zeilen werden dann wie beim Seitenende als "passt nicht" gemeldet.
-    const seitenMaxLines = Math.max(1, Math.floor((seitenUnten - block.y) / lineHeight) + 1);
-    const maxLines = block.h
-      ? Math.min(seitenMaxLines, Math.max(1, Math.floor(block.h / lineHeight)))
-      : seitenMaxLines;
-
-    const drawn = drawLines(
-      lines,
-      { x: block.x, y: block.y, blockSalt: block.id * 104729 },
-      { fontSize: drawSize, lineHeight, mess, ink, maxLines, joined: meta.joined, own }
-    );
-
-    if (lines.length > drawn) ueberlaufend.push(index + 1);
-
-    blockBoxen.push({
-      id: block.id,
-      x: block.x - 8,
-      y: block.y - lineHeight * 0.72,
-      w: block.w + 16,
-      h: block.h || Math.max(drawn, 1) * lineHeight + lineHeight * 0.3,
-    });
-  });
-
-  // Rückmeldung an die Nutzerin
-  if (ueberlaufend.length) {
-    statusEl.dataset.warn = "true";
-    statusEl.textContent = bloecke.length > 1
-      ? `Textfeld ${ueberlaufend.join(", ")} passt nicht vollständig auf das Blatt.`
-      : "Der Text passt nicht vollständig auf das Blatt. Schrift verkleinern oder Text kürzen.";
-  } else {
-    statusEl.dataset.warn = "false";
-    statusEl.textContent = bloecke.length > 1
-      ? `${bloecke.length} Textfelder auf dem Blatt.`
-      : "Passt aufs Blatt.";
+  /* ---------- Layout-Pass: wer landet wo? ----------
+     Für jeden Block wird berechnet, auf welche Seite(n) er kommt. Passt
+     der Text eines Textfelds nicht mehr auf seine Seite, wird der Rest
+     automatisch auf der nächsten Seite weitergeschrieben (wie in einer
+     Textverarbeitung) – block.seite selbst bleibt dabei unverändert,
+     das ist nur die Seite, auf der der Block *beginnt*. */
+  const seitenEintraege = [[]];
+  function holSeite(i) {
+    while (seitenEintraege.length <= i) seitenEintraege.push([]);
+    return seitenEintraege[i];
   }
 
+  bloecke.forEach((block) => {
+    if (block.type === "image") {
+      holSeite(block.seite || 0).push({ art: "bild", block });
+      return;
+    }
+
+    const alleZeilen = wrapText(block.text, block.w, eigeneMessung);
+    if (alleZeilen.length === 0) {
+      holSeite(block.seite || 0).push({ art: "text", block, zeilen: [], x: block.x, y: block.y, liStart: 0 });
+      return;
+    }
+
+    let index = 0;
+    let seiteNr = block.seite || 0;
+    let y = block.y;
+    let ersteSeite = true;
+
+    while (index < alleZeilen.length) {
+      // Eine von Hand gesetzte Höhe (block.h) begrenzt nur auf der
+      // ersten Seite des Blocks – auf einer neuen Seite fängt er ja
+      // wieder oben an und darf wieder die volle Seite nutzen.
+      const untereGrenze = block.h && ersteSeite ? Math.min(y + block.h, seitenUnten) : seitenUnten;
+      const maxHier = Math.max(1, Math.floor((untereGrenze - y) / lineHeight) + 1);
+      const stueck = alleZeilen.slice(index, index + maxHier);
+
+      holSeite(seiteNr).push({ art: "text", block, zeilen: stueck, x: block.x, y, liStart: index });
+
+      index += stueck.length;
+      if (index < alleZeilen.length) {
+        seiteNr++;
+        y = MARGIN.top;
+        ersteSeite = false;
+      }
+    }
+  });
+
+  const seitenAnzahl = Math.max(mindestSeiten, seitenEintraege.length);
+  richteSeitenEin(seitenAnzahl);
+
+  /* ---------- Mal-Pass: jede Seite auf ihren eigenen Canvas ---------- */
+  const blockBoxen = [];
+
+  for (let s = 0; s < seitenAnzahl; s++) {
+    const c = seitenCanvasListe[s];
+    c.width = PAGE.w * SCALE;
+    c.height = PAGE.h * SCALE;
+    ctx = c.getContext("2d");
+    ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+
+    drawPaper(paper, lineHeight, MARGIN);
+
+    ctx.font = `${drawSize}px "${meta.name}", "Bradley Hand", cursive`;
+    ctx.textBaseline = "alphabetic";
+
+    (seitenEintraege[s] || []).forEach((eintrag) => {
+      if (eintrag.art === "bild") {
+        const { block } = eintrag;
+        if (block.img && block.img.complete && block.img.naturalWidth) {
+          ctx.drawImage(block.img, block.x, block.y, block.w, block.h);
+        }
+        blockBoxen.push({
+          id: block.id, seite: s, heim: true,
+          x: block.x, y: block.y, w: block.w, h: block.h,
+        });
+        return;
+      }
+
+      const { block, zeilen, x, y, liStart } = eintrag;
+      const drawn = drawLines(
+        zeilen,
+        { x, y, blockSalt: block.id * 104729, liStart },
+        { fontSize: drawSize, lineHeight, mess, ink, joined: meta.joined, own }
+      );
+
+      blockBoxen.push({
+        id: block.id,
+        seite: s,
+        heim: liStart === 0,
+        x: x - 8,
+        y: y - lineHeight * 0.72,
+        w: block.w + 16,
+        h: Math.max(drawn, 1) * lineHeight + lineHeight * 0.3,
+      });
+    });
+  }
+
+  // Rückmeldung an die Nutzerin – "passt nicht" gibt es nicht mehr: was
+  // nicht mehr auf eine Seite passt, bekommt automatisch eine neue.
+  statusEl.dataset.warn = "false";
+  statusEl.textContent = bloecke.length > 1 || seitenAnzahl > 1
+    ? `${bloecke.length} Element${bloecke.length === 1 ? "" : "e"} auf ${seitenAnzahl} Seite${seitenAnzahl === 1 ? "" : "n"}.`
+    : "Passt aufs Blatt.";
+
   letzteBlockBoxen = blockBoxen;
+  letzteSeitenAnzahl = seitenAnzahl;
   if (typeof onNachRender === "function") onNachRender();
 }
 
@@ -747,8 +887,11 @@ function scheduleRender() {
 
 // Die Seitenleiste bearbeitet immer Textfeld 1 – zweiseitig gekoppelt
 // mit dem, was direkt auf dem Blatt bearbeitet wird (siehe editor.js).
+// Ist bloecke[0] (z.B. nach "Nach hinten" mit einem Bild) kein Textfeld
+// mehr, bleibt die Seitenleiste einfach wirkungslos statt etwas kaputt
+// zu machen.
 inputEl.addEventListener("input", () => {
-  bloecke[0].text = inputEl.value;
+  if (bloecke[0] && bloecke[0].type !== "image") bloecke[0].text = inputEl.value;
   scheduleRender();
 });
 
@@ -761,15 +904,20 @@ reshuffleBtn.addEventListener("click", () => {
   render();
 });
 
+// Bei mehreren Seiten wird pro Seite eine eigene PNG-Datei heruntergeladen
+// (handschrift-seite-1.png, -2.png, ...) – ein PNG kennt von sich aus
+// keine "mehreren Seiten", anders als PDF weiter unten.
 downloadBtn.addEventListener("click", () => {
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "handschrift.png";
-    a.click();
-    URL.revokeObjectURL(url);
-  }, "image/png");
+  seitenCanvasListe.slice(0, letzteSeitenAnzahl).forEach((c, i) => {
+    c.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = letzteSeitenAnzahl > 1 ? `handschrift-seite-${i + 1}.png` : "handschrift.png";
+      a.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  });
 });
 
 /* -------------------------------------------------------------
@@ -791,9 +939,12 @@ downloadPdfBtn.addEventListener("click", async () => {
 
   try {
     const { jsPDF } = await import("https://esm.sh/jspdf@2.5.2");
-    const bild = canvas.toDataURL("image/jpeg", 0.92);
     const pdf = new jsPDF({ unit: "px", format: [PAGE.w, PAGE.h] });
-    pdf.addImage(bild, "JPEG", 0, 0, PAGE.w, PAGE.h);
+    for (let i = 0; i < letzteSeitenAnzahl; i++) {
+      if (i > 0) pdf.addPage([PAGE.w, PAGE.h], "portrait");
+      const bild = seitenCanvasListe[i].toDataURL("image/jpeg", 0.92);
+      pdf.addImage(bild, "JPEG", 0, 0, PAGE.w, PAGE.h);
+    }
     pdf.save("handschrift.pdf");
   } catch (err) {
     statusEl.dataset.warn = "true";

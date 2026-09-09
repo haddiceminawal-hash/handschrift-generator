@@ -10,6 +10,11 @@ geschrieben. Läuft komplett im Browser – ohne Server, ohne Installation.
 - **Frei verschiebbare Textfelder** – direkt auf dem Blatt anklicken, ziehen,
   in der Größe ändern, per Doppelklick bearbeiten; Doppelklick auf eine
   freie Stelle legt ein neues Textfeld an
+- **Mehrseitige Dokumente** – "Seite hinzufügen" legt eine weitere Seite an,
+  und ein zu langes Textfeld läuft automatisch auf der nächsten Seite weiter
+- **Bilder & Unterschriften einfügen** – eigenes Foto/Bild einfügen oder eine
+  fotografierte Unterschrift, bei der helle/weiße Bereiche automatisch
+  transparent werden
 - **Mehrfachauswahl, Ausrichten & Anordnen** – mehrere Textfelder per
   Umschalt-Klick auswählen und bündig ausrichten, nach vorne/hinten stellen
 - **Rückgängig / Wiederholen** (Strg+Z / Strg+Umschalt+Z)
@@ -20,8 +25,10 @@ geschrieben. Läuft komplett im Browser – ohne Server, ohne Installation.
   Abständen, kariert, Punktraster, Cornell-Notizen, blanko)
 - Regler für Schriftgröße und „Unordentlichkeit"
 - Vier Tintenfarben
-- Download als PNG (1588 × 2246 px) oder als **PDF für GoodNotes**
+- Download als PNG (1588 × 2246 px, eine Datei pro Seite) oder als
+  **mehrseitiges PDF für GoodNotes**
 - Automatischer Zeilenumbruch inkl. Silbentrennung bei langen Wörtern
+- Schriftarten liegen lokal (nicht bei Google), aus Datenschutzgründen
 
 ## Wie die Handschrift entsteht
 
@@ -109,7 +116,44 @@ jeder Mausbewegung, sondern nur am Ende einer Aktion (Ziehen/Größe-Ändern
 fertig, Textfeld verlassen, hinzugefügt, gelöscht, ausgerichtet, ...) – sonst
 bräuchte man beim Rückgängigmachen einer einzigen Zieh-Bewegung hunderte
 Klicks. Strg+Z funktioniert nicht, während in einem Textfeld getippt wird –
-dort greift stattdessen das eingebaute Undo des Browsers.
+dort greift stattdessen das eingebaute Undo des Browsers. Position/Größe
+werden bei jeder Mausbewegung sofort im Datenmodell aktualisiert (nur das
+Neuzeichnen ist über `requestAnimationFrame` gedrosselt) – sonst könnte ein
+schnelles Loslassen der Maus den letzten Bewegungsschritt verpassen und ein
+veralteter Stand würde gesichert.
+
+## Mehrere Seiten
+
+Jede Seite hat ihr eigenes `<canvas>` plus eigene `.text-layer`-Ebene
+(`richteSeitenEin()` in `script.js` legt bzw. entfernt sie bei Bedarf). Damit
+alle vorhandenen Zeichenfunktionen unverändert weiterlaufen, ist `ctx` in
+`script.js` keine feste Konstante mehr, sondern zeigt beim Zeichnen jeweils
+auf das Canvas der gerade aktiven Seite.
+
+Ein Textfeld, das nicht mehr auf eine Seite passt, läuft automatisch auf der
+nächsten weiter (`render()`s Layoutdurchlauf verteilt die Zeilen auf so viele
+Seiten wie nötig) – die Wackel-/Neigungs-Muster laufen dabei nahtlos über den
+Seitenumbruch hinweg fort, damit es nicht wie ein Bruch aussieht. Über
+„📄 Seite hinzufügen“ lässt sich zusätzlich manuell eine leere Seite anlegen.
+
+Weil Seiten dynamisch entstehen und verschwinden können, hängen Klick-/Zieh-
+Ereignisse nicht mehr an einzelnen Elementen, sondern per Delegation am
+gemeinsamen Elternteil `#page-wrap` – eine neue Seite braucht dadurch keine
+eigene Verkabelung.
+
+## Bilder & Unterschriften
+
+„🖼️ Bild einfügen“ und „✍️ Unterschrift einfügen“ legen einen Block vom Typ
+`image` an (statt `text`) – er lässt sich wie ein Textfeld verschieben, in
+der Größe ändern und löschen, nur der Doppelklick ersetzt das Bild statt
+einen Text-Editor zu öffnen.
+
+Bei Unterschriften werden helle/weiße Bereiche automatisch transparent
+gemacht (`entferneWeiss()` in `editor.js`): Das Foto landet kurz auf einem
+Hilfs-Canvas, jedes Pixel über einer Helligkeitsschwelle wird durchsichtig
+geschaltet (mit weichem statt hartem Übergang), damit die Blattlinien durch
+die Unterschrift hindurchscheinen statt hinter einem weißen Rechteck zu
+verschwinden.
 
 ## Aufbau
 
@@ -122,6 +166,9 @@ dort greift stattdessen das eingebaute Undo des Browsers.
 | `scanner.js` | Vorlage, Foto-Entzerrung, Buchstaben-Extraktion |
 | `konto.js` | Anmeldung und Sicherung bei Supabase |
 | `config.js` | Zugangsdaten für Supabase (leer = App läuft ohne Konto) |
+| `fonts.css` / `fonts/` | Lokal gehostete Schriftarten (kein Google-Fonts-CDN) |
+| `impressum.html` | Impressum (Platzhalter für Name/Adresse müssen noch ausgefüllt werden) |
+| `datenschutz.html` | Datenschutzerklärung |
 
 ## Lokal starten
 
@@ -183,7 +230,10 @@ funktioniert alles andere unverändert weiter.
 
 ## Nächste Schritte
 
-- [ ] Mehrseitige Texte (auch als mehrseitiges PDF)
+- [ ] **Vor Veröffentlichung:** Platzhalter in `impressum.html` ausfüllen
+  (Name, Adresse, E-Mail) – als vermutlich minderjährige Person dafür am
+  besten mit einem Elternteil/Erziehungsberechtigten absprechen, siehe
+  Hinweis-Box oben in der Datei
 - [ ] Ecken automatisch finden, statt sie anzuklicken
 - [ ] Mehrere Varianten pro Buchstabe (zweite Vorlagenseite)
-- [ ] Impressum & Datenschutzerklärung, bevor echte Nutzer dazukommen
+- [ ] Konto selbst löschen können (aktuell nur per E-Mail an den Betreiber)

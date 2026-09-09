@@ -679,7 +679,9 @@ input[type="file"] {
 
 .page-wrap {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
   padding: 10px;
 }
 
@@ -695,7 +697,7 @@ input[type="file"] {
   transform: rotate(0.4deg);
 }
 
-#paper {
+.paper-canvas {
   display: block;
   width: 100%;
   height: auto;
@@ -707,8 +709,24 @@ input[type="file"] {
   inset: 0;
 }
 
+.page-label {
+  display: none;
+  position: absolute;
+  top: -26px;
+  left: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.page-wrap.mehrseitig .page-label { display: block; }
+
 .preview-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   justify-content: center;
   margin-top: 14px;
 }
@@ -729,6 +747,21 @@ input[type="file"] {
 .text-block-hit.ausgewaehlt {
   border-color: var(--indigo);
   background: color-mix(in srgb, var(--indigo) 6%, transparent);
+}
+
+/* Bild-/Unterschrift-Felder: durchgezogener statt gestrichelter Rahmen,
+   damit man sie von Textfeldern unterscheiden kann. */
+.text-block-hit.bild-feld {
+  border-style: solid;
+}
+
+.text-block-hit.bild-feld.ausgewaehlt {
+  background: color-mix(in srgb, var(--coral) 10%, transparent);
+  border-color: var(--coral-dark);
+}
+
+.text-block-hit.bild-feld .resize-handle {
+  background: var(--coral-dark);
 }
 
 .text-block-loeschen {

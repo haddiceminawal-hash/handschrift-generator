@@ -139,18 +139,28 @@ Bis bald!</textarea>
       Doppelklick auf eine freie Stelle legt ein neues Textfeld an.
     </p>
 
-    <div class="page-wrap">
-      <div id="page-surface" class="page-surface">
-        <canvas id="paper" aria-label="Vorschau des handgeschriebenen Blattes"></canvas>
-        <div id="text-layer" class="text-layer"></div>
+    <div id="page-wrap" class="page-wrap">
+      <div class="page-surface" data-seite="0">
+        <div class="page-label">Seite 1</div>
+        <canvas id="paper" class="paper-canvas" aria-label="Vorschau des handgeschriebenen Blattes, Seite 1"></canvas>
+        <div id="text-layer" class="text-layer" data-seite="0"></div>
       </div>
     </div>
 
     <div class="preview-actions">
       <button type="button" id="undo-btn" class="btn btn-secondary btn-small" title="Rückgängig (Strg+Z)" disabled>↶ Rückgängig</button>
       <button type="button" id="redo-btn" class="btn btn-secondary btn-small" title="Wiederholen (Strg+Umschalt+Z)" disabled>↷ Wiederholen</button>
-      <button type="button" id="add-block" class="btn btn-secondary btn-small">➕ Textfeld hinzufügen</button>
     </div>
+
+    <div class="preview-actions">
+      <button type="button" id="add-block" class="btn btn-secondary btn-small">➕ Textfeld</button>
+      <button type="button" id="add-image" class="btn btn-secondary btn-small">🖼️ Bild einfügen</button>
+      <button type="button" id="add-signature" class="btn btn-secondary btn-small">✍️ Unterschrift einfügen</button>
+      <button type="button" id="add-page" class="btn btn-secondary btn-small">📄 Seite hinzufügen</button>
+    </div>
+
+    <input type="file" id="bild-datei" accept="image/*" hidden>
+    <input type="file" id="unterschrift-datei" accept="image/*" hidden>
 
     <!-- Erscheint nur, wenn mindestens ein Textfeld ausgewählt ist -->
     <div id="arrange-toolbar" class="arrange-toolbar" hidden>
