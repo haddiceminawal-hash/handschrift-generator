@@ -322,8 +322,6 @@ body {
 
 .panel::before {
   content: "";
-  position: sticky;
-  top: 0;
   display: block;
   height: 5px;
   margin: -26px -24px 22px;
@@ -563,6 +561,10 @@ output {
 }
 
 .paper-karte span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.584rem;
   font-size: 0.66rem;
   font-weight: 600;
   line-height: 1.2;
@@ -841,7 +843,7 @@ input[type="file"] {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .arrange-toolbar[hidden] { display: none; }
