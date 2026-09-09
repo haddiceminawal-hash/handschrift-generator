@@ -181,6 +181,34 @@ let seed = Math.floor(Math.random() * 100000);
 let ownFont = null;
 
 /* -------------------------------------------------------------
+   Textfelder
+
+   Der Text liegt nicht mehr fest an einem Rand, sondern in mehreren frei
+   verschiebbaren Textfeldern – bedienbar direkt auf dem Blatt (siehe
+   editor.js). Das erste Textfeld ist an das Textfeld in der Seitenleiste
+   gekoppelt (zweiseitig: tippt man dort, ändert sich bloecke[0].text;
+   bearbeitet man Textfeld 1 direkt auf dem Blatt, wandert der neue Text
+   auch zurück in die Seitenleiste).
+
+   x/y sind die Position der ersten Zeile (in Seiten-Pixeln, wie MARGIN),
+   w ist die Breite, an der der Text umbricht.
+------------------------------------------------------------- */
+
+let bloecke = [
+  { id: 1, text: inputEl.value, x: BASE_MARGIN.left, y: BASE_MARGIN.top, w: 664 },
+];
+let naechsteBlockId = 2;
+
+// Wird von render() nach jedem Zeichnen befüllt (Position + Größe jedes
+// Textfelds in Seiten-Pixeln) und von editor.js gelesen, um die
+// unsichtbaren Klick-/Zieh-Flächen darüberzulegen.
+let letzteBlockBoxen = [];
+
+// Wird von editor.js gesetzt: einmal pro render() aufgerufen, damit die
+// Klickflächen mit dem frisch gezeichneten Blatt übereinstimmen.
+let onNachRender = null;
+
+/* -------------------------------------------------------------
    Zufall, der sich merken lässt
    Math.random() würde bei jedem Tastendruck alles neu würfeln –
    das Blatt würde beim Tippen wild zappeln. Deshalb berechnen wir
@@ -401,11 +429,11 @@ function wrapText(text, maxWidth, measure) {
 /* Modus A: Druckschrift – jeder Buchstabe wird einzeln verzerrt.
    Derselbe Buchstabe soll nie zweimal exakt gleich aussehen. */
 function drawLoose(line, li, x, baseY, wobbleAt, opts) {
-  const { fontSize, mess, ink } = opts;
+  const { fontSize, mess, ink, blockSalt = 0 } = opts;
 
   for (let ci = 0; ci < line.length; ci++) {
     const ch = line[ci];
-    const key = seed * 7919 + li * 131 + ci * 17;
+    const key = seed * 7919 + blockSalt + li * 131 + ci * 17;
 
     const a = rand01(key + 1);   // Drehung
     const b = rand01(key + 2);   // Höhe
@@ -452,11 +480,11 @@ function drawLoose(line, li, x, baseY, wobbleAt, opts) {
    Verbindungsstriche zwischen den Buchstaben. Deshalb fällt die
    Verzerrung hier auch schwächer aus. */
 function drawJoined(line, li, x, baseY, wobbleAt, opts) {
-  const { fontSize, mess, ink } = opts;
+  const { fontSize, mess, ink, blockSalt = 0 } = opts;
   const spaceW = ctx.measureText(" ").width;
 
   line.split(" ").forEach((word, wi) => {
-    const key = seed * 7919 + li * 131 + wi * 97;
+    const key = seed * 7919 + blockSalt + li * 131 + wi * 97;
 
     if (word) {
       const a = rand01(key + 1);
@@ -534,12 +562,12 @@ function tintGlyph(g, ink) {
 }
 
 function drawOwn(line, li, x, baseY, wobbleAt, opts) {
-  const { fontSize, mess, ink } = opts;
+  const { fontSize, mess, ink, blockSalt = 0 } = opts;
   const s = ownScale(fontSize);
 
   for (let ci = 0; ci < line.length; ci++) {
     const ch = line[ci];
-    const key = seed * 7919 + li * 131 + ci * 17;
+    const key = seed * 7919 + blockSalt + li * 131 + ci * 17;
     const a = rand01(key + 1);
     const b = rand01(key + 2);
     const c = rand01(key + 3);
@@ -579,28 +607,33 @@ function drawOwn(line, li, x, baseY, wobbleAt, opts) {
   return x;
 }
 
-function drawLines(lines, opts) {
+// "origin" ist die Position des Textfelds ({x, y, blockSalt}) – jedes
+// Textfeld bekommt über blockSalt sein eigenes Wackel-Muster, sonst
+// sähen zwei Textfelder in derselben Zeile identisch verzerrt aus.
+function drawLines(lines, origin, opts) {
   const { lineHeight, mess, maxLines, joined } = opts;
+  const salt = origin.blockSalt || 0;
   const shown = lines.slice(0, maxLines);
+  const vollOpts = { ...opts, blockSalt: salt };
 
   shown.forEach((line, li) => {
-    const baseY = MARGIN.top + li * lineHeight;
+    const baseY = origin.y + li * lineHeight;
 
     // Jede Zeile bekommt eine eigene leichte Welle und Schräglage –
     // von Hand schreibt niemand exakt waagerecht.
-    const phase = rand01(seed * 31 + li) * Math.PI * 2;
-    const slope = (rand01(seed * 57 + li) - 0.5) * mess * 0.018;
+    const phase = rand01(seed * 31 + li + salt) * Math.PI * 2;
+    const slope = (rand01(seed * 57 + li + salt) - 0.5) * mess * 0.018;
     const wobbleAt = (px) =>
-      Math.sin(px * 0.035 + phase) * mess * 1.7 + (px - MARGIN.left) * slope;
+      Math.sin(px * 0.035 + phase) * mess * 1.7 + (px - origin.x) * slope;
 
-    const startX = MARGIN.left + (rand01(seed * 91 + li) - 0.5) * mess * 4;
+    const startX = origin.x + (rand01(seed * 91 + li + salt) - 0.5) * mess * 4;
 
     if (opts.own) {
-      drawOwn(line, li, startX, baseY, wobbleAt, opts);
+      drawOwn(line, li, startX, baseY, wobbleAt, vollOpts);
     } else if (joined) {
-      drawJoined(line, li, startX, baseY, wobbleAt, opts);
+      drawJoined(line, li, startX, baseY, wobbleAt, vollOpts);
     } else {
-      drawLoose(line, li, startX, baseY, wobbleAt, opts);
+      drawLoose(line, li, startX, baseY, wobbleAt, vollOpts);
     }
   });
 
@@ -645,29 +678,48 @@ async function render() {
   ctx.font = `${drawSize}px "${meta.name}", "Bradley Hand", cursive`;
   ctx.textBaseline = "alphabetic";
 
-  const maxWidth = PAGE.w - MARGIN.left - MARGIN.right;
-  const lines = wrapText(
-    inputEl.value,
-    maxWidth,
-    own ? (t) => measureOwn(t, drawSize) : null
-  );
-  const maxLines = Math.floor((PAGE.h - MARGIN.top - MARGIN.bottom) / lineHeight) + 1;
+  const eigeneMessung = own ? (t) => measureOwn(t, drawSize) : null;
+  const seitenUnten = PAGE.h - 40;   // wie weit ein Textfeld maximal runterreichen darf
 
-  const drawn = drawLines(lines, {
-    fontSize: drawSize, lineHeight, mess, ink, maxLines,
-    joined: meta.joined, own,
+  const blockBoxen = [];
+  const ueberlaufend = [];
+
+  bloecke.forEach((block, index) => {
+    const lines = wrapText(block.text, block.w, eigeneMessung);
+    const maxLines = Math.max(1, Math.floor((seitenUnten - block.y) / lineHeight) + 1);
+
+    const drawn = drawLines(
+      lines,
+      { x: block.x, y: block.y, blockSalt: block.id * 104729 },
+      { fontSize: drawSize, lineHeight, mess, ink, maxLines, joined: meta.joined, own }
+    );
+
+    if (lines.length > drawn) ueberlaufend.push(index + 1);
+
+    blockBoxen.push({
+      id: block.id,
+      x: block.x - 8,
+      y: block.y - lineHeight * 0.72,
+      w: block.w + 16,
+      h: Math.max(drawn, 1) * lineHeight + lineHeight * 0.3,
+    });
   });
 
   // Rückmeldung an die Nutzerin
-  if (lines.length > drawn) {
+  if (ueberlaufend.length) {
     statusEl.dataset.warn = "true";
-    statusEl.textContent =
-      `${lines.length - drawn} Zeile(n) passen nicht auf das Blatt. ` +
-      `Schrift verkleinern oder Text kürzen.`;
+    statusEl.textContent = bloecke.length > 1
+      ? `Textfeld ${ueberlaufend.join(", ")} passt nicht vollständig auf das Blatt.`
+      : "Der Text passt nicht vollständig auf das Blatt. Schrift verkleinern oder Text kürzen.";
   } else {
     statusEl.dataset.warn = "false";
-    statusEl.textContent = `${drawn} von ${maxLines} Zeilen belegt.`;
+    statusEl.textContent = bloecke.length > 1
+      ? `${bloecke.length} Textfelder auf dem Blatt.`
+      : "Passt aufs Blatt.";
   }
+
+  letzteBlockBoxen = blockBoxen;
+  if (typeof onNachRender === "function") onNachRender();
 }
 
 /* ---------- Bedienung ---------- */
@@ -685,7 +737,14 @@ function scheduleRender() {
   timer = setTimeout(render, 80);
 }
 
-[inputEl, fontEl, inkEl, sizeEl, messEl].forEach((el) => {
+// Die Seitenleiste bearbeitet immer Textfeld 1 – zweiseitig gekoppelt
+// mit dem, was direkt auf dem Blatt bearbeitet wird (siehe editor.js).
+inputEl.addEventListener("input", () => {
+  bloecke[0].text = inputEl.value;
+  scheduleRender();
+});
+
+[fontEl, inkEl, sizeEl, messEl].forEach((el) => {
   el.addEventListener("input", scheduleRender);
 });
 

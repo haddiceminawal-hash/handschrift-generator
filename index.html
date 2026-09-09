@@ -135,9 +135,23 @@ Bis bald!</textarea>
 
   <!-- ---------- Rechte Seite: Vorschau ---------- -->
   <section class="preview" aria-label="Vorschau">
+
+    <p class="hinweis preview-hinweis">
+      Textfelder ziehen zum Verschieben, Doppelklick zum Bearbeiten –
+      Doppelklick auf eine freie Stelle legt ein neues Textfeld an.
+    </p>
+
     <div class="page-wrap">
-      <canvas id="paper" aria-label="Vorschau des handgeschriebenen Blattes"></canvas>
+      <div id="page-surface" class="page-surface">
+        <canvas id="paper" aria-label="Vorschau des handgeschriebenen Blattes"></canvas>
+        <div id="text-layer" class="text-layer"></div>
+      </div>
     </div>
+
+    <div class="preview-actions">
+      <button type="button" id="add-block" class="btn btn-secondary btn-small">➕ Textfeld hinzufügen</button>
+    </div>
+
   </section>
 
 </main>
@@ -293,5 +307,6 @@ Bis bald!</textarea>
 <script src="script.js"></script>
 <script src="scanner.js"></script>
 <script src="konto.js"></script>
+<script src="editor.js"></script>
 </body>
 </html>

@@ -7,6 +7,9 @@ geschrieben. Läuft komplett im Browser – ohne Server, ohne Installation.
 
 ## Funktionen
 
+- **Frei verschiebbare Textfelder** – direkt auf dem Blatt anklicken, ziehen,
+  per Doppelklick bearbeiten; Doppelklick auf eine freie Stelle legt ein
+  neues Textfeld an
 - **22 Schriftarten** in drei Gruppen (Druckschrift, Schreibschrift, Kalligrafie)
 - **Eigene Handschrift einlesen** – Vorlage ausdrucken, ausfüllen, abfotografieren
 - **Konto** (optional) – Handschrift bleibt geräteübergreifend erhalten
@@ -62,13 +65,33 @@ importieren (Importieren → Als neues Dokument) und direkt draufschreiben.
 Die PDF-Erzeugung übernimmt [jsPDF](https://github.com/parallax/jsPDF), das
 wie Supabase erst bei Bedarf per `import()` nachgeladen wird.
 
+## Frei verschiebbare Textfelder
+
+Der Text liegt nicht mehr fest an einem Rand, sondern in `bloecke` – einer
+Liste von Textfeldern mit eigener Position (`x`, `y`) und Breite (`w`).
+`render()` in `script.js` zeichnet jedes davon einzeln und merkt sich danach
+in `letzteBlockBoxen`, wo genau auf dem Blatt jedes gelandet ist.
+
+Der Canvas selbst kann nichts anklicken lassen – sobald etwas gezeichnet ist,
+sind es nur noch Pixel. Deshalb übernimmt `editor.js` das Bedienbare: Über
+dem Canvas liegt eine unsichtbare HTML-Ebene (`#text-layer`) mit einer
+Klick-/Zieh-Fläche pro Textfeld, positioniert per Prozent (damit es auch bei
+verkleinertem Fenster exakt passt). Doppelklick darauf blendet kurz ein
+`<textarea>` ein, das den Text des Textfelds direkt auf dem Blatt bearbeitbar
+macht; beim Verlassen wandert der neue Text zurück ins Datenmodell und das
+Blatt wird neu gezeichnet.
+
+Textfeld 1 ist zweiseitig mit dem Textfeld in der Seitenleiste gekoppelt –
+beide bearbeiten denselben Text, egal auf welchem Weg man ihn ändert.
+
 ## Aufbau
 
 | Datei | Inhalt |
 |---|---|
 | `index.html` | Aufbau der Seite |
 | `style.css` | Gestaltung, inkl. Dark Mode |
-| `script.js` | Zeichen-Engine, Papiervorlagen, PDF-Export |
+| `script.js` | Zeichen-Engine, Textfelder, Papiervorlagen, PDF-Export |
+| `editor.js` | Textfelder direkt auf dem Blatt anklicken, verschieben, bearbeiten |
 | `scanner.js` | Vorlage, Foto-Entzerrung, Buchstaben-Extraktion |
 | `konto.js` | Anmeldung und Sicherung bei Supabase |
 | `config.js` | Zugangsdaten für Supabase (leer = App läuft ohne Konto) |
