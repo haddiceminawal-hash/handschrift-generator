@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Datenschutzerklärung – Handschrift-Generator</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%8D%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-glow" aria-hidden="true"></div>
+  <div class="header-row">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">✍️</span>
+      <div class="brand-text">
+        <h1>Handschrift<span class="brand-dot">.</span></h1>
+        <p class="subtitle"><a href="index.html">← Zurück zur App</a></p>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="rechtstext">
+
+  <div class="ausfuellen-hinweis">
+    ⚠️ Diese Erklärung beschreibt wahrheitsgemäß, welche Daten diese App
+    technisch verarbeitet. Der Name/die Kontaktdaten der verantwortlichen
+    Person unten sind noch Platzhalter – dieselben, die im
+    <a href="impressum.html">Impressum</a> auszufüllen sind.
+  </div>
+
+  <h1>Datenschutzerklärung</h1>
+
+  <h2>1. Verantwortlicher</h2>
+  <p>
+    Verantwortlich für die Datenverarbeitung auf dieser Seite ist die im
+    <a href="impressum.html">Impressum</a> genannte Person.
+  </p>
+
+  <h2>2. Im Überblick: welche Daten wo landen</h2>
+  <table class="rechtstabelle">
+    <thead>
+      <tr><th>Was</th><th>Wo</th><th>Wann</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Getippter Text, Einstellungen (Schrift, Papier, Farbe)</td>
+        <td>Nur im Arbeitsspeicher deines Browsers</td>
+        <td>Verlässt dein Gerät nie</td>
+      </tr>
+      <tr>
+        <td>Eingescannte eigene Handschrift</td>
+        <td><code>localStorage</code> deines Browsers, optional zusätzlich
+          bei Supabase</td>
+        <td>Nur wenn du die Scan-Funktion nutzt</td>
+      </tr>
+      <tr>
+        <td>E-Mail-Adresse, Passwort (verschlüsselt), Anmelde-Sitzung</td>
+        <td>Supabase (Auth), Rechenzentrum Frankfurt</td>
+        <td>Nur wenn du ein Konto anlegst</td>
+      </tr>
+      <tr>
+        <td>IP-Adresse beim Seitenaufruf</td>
+        <td>GitHub Pages (Hosting)</td>
+        <td>Bei jedem Seitenaufruf, technisch unvermeidbar</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>3. Hosting (GitHub Pages)</h2>
+  <p>
+    Diese Seite wird über GitHub Pages ausgeliefert, einen Dienst von
+    GitHub, Inc. bzw. GitHub B.V., 88 Colin P. Kelly Jr. Street, San
+    Francisco, CA 94107, USA. Beim Aufruf der Seite verarbeitet GitHub
+    automatisch technische Daten (u. a. IP-Adresse, Browsertyp,
+    Zugriffszeitpunkt) in sogenannten Server-Logfiles – das ist bei jedem
+    Webserver technisch notwendig, um die Seite überhaupt ausliefern zu
+    können. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes
+    Interesse an einer funktionierenden, sicheren Auslieferung der Seite).
+    Näheres regelt die
+    <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">
+      Datenschutzerklärung von GitHub
+    </a>.
+  </p>
+
+  <h2>4. Schriftarten</h2>
+  <p>
+    Die auf dieser Seite verwendeten Schriftarten (Google Fonts) werden
+    <strong>lokal</strong> von diesem Server ausgeliefert, nicht von
+    Google-Servern. Beim Laden der Schriftarten wird deshalb keine
+    Verbindung zu Google aufgebaut und keine IP-Adresse an Google
+    übertragen.
+  </p>
+
+  <h2>5. Externe Programmbibliotheken (nur bei Nutzung)</h2>
+  <p>
+    Zwei Funktionen laden bei Bedarf zusätzlichen Programmcode von
+    <code>esm.sh</code> (einem CDN für JavaScript-Bibliotheken) nach –
+    dabei wird deine IP-Adresse an esm.sh übertragen:
+  </p>
+  <ul>
+    <li><strong>Konto-Funktion:</strong> lädt die Bibliothek
+      <em>supabase-js</em>, sobald du das Konto-Symbol öffnest.</li>
+    <li><strong>„Für GoodNotes“-Export:</strong> lädt die Bibliothek
+      <em>jsPDF</em>, sobald du auf diesen Button klickst.</li>
+  </ul>
+  <p>
+    Nutzt du keine der beiden Funktionen, findet keine dieser Verbindungen
+    statt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Erfüllung der
+    von dir aktiv angeforderten Funktion).
+  </p>
+
+  <h2>6. Konto und Handschrift-Speicherung (Supabase)</h2>
+  <p>
+    Die Konto-Funktion ist freiwillig – ohne Konto funktioniert die App
+    vollständig, deine eingescannte Handschrift liegt dann ausschließlich
+    lokal in deinem Browser (<code>localStorage</code>) und wird an
+    niemanden übertragen.
+  </p>
+  <p>
+    Legst du ein Konto an, verarbeiten wir:
+  </p>
+  <ul>
+    <li><strong>E-Mail-Adresse</strong> und ein verschlüsseltes Passwort
+      bzw. bei Anmeldung per Magic-Link ein einmaliges Token, zur
+      Anmeldung (Art. 6 Abs. 1 lit. b DSGVO).</li>
+    <li><strong>Deine eingescannte Handschrift</strong> (Bilder einzelner
+      Buchstaben), damit sie geräteübergreifend verfügbar ist (Art. 6
+      Abs. 1 lit. b DSGVO). Diese Daten liegen in einem Ordner, der nur
+      über deine Nutzer-ID erreichbar ist – Zugriffsregeln in der
+      Datenbank stellen sicher, dass ausschließlich du selbst darauf
+      zugreifen kannst.</li>
+  </ul>
+  <p>
+    Auftragsverarbeiter für diese Daten ist Supabase Inc.; die
+    verwendete Projekt-Instanz liegt im Rechenzentrum
+    <strong>Frankfurt am Main</strong> (AWS-Region eu-central-1), die
+    Daten bleiben also innerhalb der EU. Weitere Informationen:
+    <a href="https://supabase.com/privacy" target="_blank" rel="noopener">
+      Datenschutzerklärung von Supabase
+    </a>.
+  </p>
+
+  <h2>7. Cookies, Tracking, Werbung</h2>
+  <p>
+    Diese Seite setzt <strong>keine</strong> Analyse- oder Tracking-Cookies,
+    keine Werbe-Cookies und keine Dienste wie Google Analytics ein. Die
+    einzige gespeicherte Information in deinem Browser ist
+    <code>localStorage</code> für deine eingescannte Handschrift sowie –
+    nur bei Konto-Nutzung – ein Anmelde-Token von Supabase.
+  </p>
+
+  <h2>8. Deine Rechte</h2>
+  <p>
+    Du hast jederzeit das Recht auf Auskunft über deine gespeicherten
+    Daten (Art. 15 DSGVO), auf Berichtigung (Art. 16), Löschung (Art. 17),
+    Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit
+    (Art. 20) sowie Widerspruch gegen die Verarbeitung (Art. 21). Wende
+    dich dafür an die im <a href="impressum.html">Impressum</a> genannte
+    Kontaktadresse.
+  </p>
+  <p>
+    Ein Konto kann aktuell noch nicht selbstständig in der App gelöscht
+    werden – bis es eine eigene Funktion dafür gibt, genügt eine
+    formlose E-Mail an die Kontaktadresse, um Konto samt gespeicherter
+    Handschrift löschen zu lassen.
+  </p>
+  <p>
+    Außerdem besteht ein Beschwerderecht bei einer
+    Datenschutz-Aufsichtsbehörde, z. B. der für deinen Wohnort
+    zuständigen Landesdatenschutzbehörde.
+  </p>
+
+  <p class="rechtstext-fussnote">
+    Stand dieser Erklärung: Sie beschreibt den technischen Aufbau der App
+    zum Zeitpunkt der Erstellung. Ändert sich an der Technik etwas (neue
+    Funktionen, andere Dienste), muss diese Seite entsprechend angepasst
+    werden.
+  </p>
+
+</main>
+
+<footer class="site-footer">
+  <a href="index.html">Zur App</a>
+  <a href="impressum.html">Impressum</a>
+</footer>
+
+</body>
+</html>

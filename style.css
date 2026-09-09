@@ -892,3 +892,86 @@ input[type="file"] {
   justify-content: center;
   margin-top: 14px;
 }
+
+/* ---------- Fußzeile (Impressum/Datenschutz-Links) ---------- */
+.site-footer {
+  max-width: 1220px;
+  margin: 40px auto 0;
+  padding: 20px 6px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.site-footer a {
+  color: var(--text-soft);
+  text-decoration: none;
+}
+
+.site-footer a:hover { color: var(--indigo); text-decoration: underline; }
+
+/* ---------- Impressum / Datenschutz ---------- */
+.rechtstext {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 10px 6px 60px;
+  line-height: 1.65;
+}
+
+.rechtstext h1 {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  margin: 0 0 24px;
+}
+
+.rechtstext h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 30px 0 10px;
+}
+
+.rechtstext p, .rechtstext ul { color: var(--text-soft); }
+.rechtstext a { color: var(--indigo); }
+
+.rechtstext-fussnote {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.ausfuellen-hinweis {
+  background: color-mix(in srgb, var(--coral) 14%, transparent);
+  border: 1.5px solid var(--coral);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  margin-bottom: 28px;
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.rechtstabelle {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 0.85rem;
+}
+
+.rechtstabelle th,
+.rechtstabelle td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-soft);
+}
+
+.rechtstabelle th {
+  color: var(--text);
+  font-weight: 700;
+}
