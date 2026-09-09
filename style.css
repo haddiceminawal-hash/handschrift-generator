@@ -582,6 +582,33 @@ output {
 
 .paper-karte.ausgewaehlt span { color: var(--indigo-dark); }
 
+/* ---------- Rolle wählen (Lehrer*in / Schüler*in) ---------- */
+.role-picker {
+  display: flex;
+  gap: 10px;
+}
+
+.role-karte {
+  flex: 1;
+  padding: 10px 14px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--panel-bg-soft);
+  color: var(--text-soft);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.role-karte:hover { border-color: var(--indigo); }
+
+.role-karte.ausgewaehlt {
+  border-color: var(--indigo);
+  background: var(--indigo-light);
+  color: var(--indigo-dark);
+}
+
 /* ---------- Eigene Handschrift (Akkordeon) ---------- */
 .own {
   margin-top: 18px;

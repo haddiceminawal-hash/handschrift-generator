@@ -29,6 +29,15 @@ let nutzer = null;
 // aber erst ein neues Passwort setzen, bevor sie als "angemeldet" gilt.
 let istPasswortWiederherstellung = false;
 
+// "lehrer" | "schueler" | null (noch nicht geladen bzw. kein Profil-Eintrag
+// vorhanden, z. B. weil die profiles-Tabelle noch nicht eingerichtet ist –
+// siehe KONTO-SETUP.md). Kommt bewusst NICHT aus user_metadata (das könnte
+// sich jede Person selbst umschreiben), sondern aus der profiles-Tabelle,
+// die nur ein serverseitiger Trigger einmalig bei der Registrierung füllt.
+let nutzerRolle = null;
+let rollenVorlageGesetzt = false;
+let gewaehlteRolle = null;
+
 /* ---------- Elemente ---------- */
 
 const kontoHinweis = document.getElementById("konto-hinweis");
@@ -57,7 +66,12 @@ const kontoLoginSendenBtn = document.getElementById("konto-login-senden");
 const kontoSignupEmail = document.getElementById("konto-signup-email");
 const kontoSignupPasswort = document.getElementById("konto-signup-passwort");
 const kontoSignupPasswort2 = document.getElementById("konto-signup-passwort2");
+const kontoSignupRolleLehrer = document.getElementById("konto-signup-rolle-lehrer");
+const kontoSignupRolleSchueler = document.getElementById("konto-signup-rolle-schueler");
 const kontoSignupSendenBtn = document.getElementById("konto-signup-senden");
+
+// Nur für Lehrer-Konten sichtbar (siehe zeigeRollenUI())
+const kiGeneratorPanel = document.getElementById("ki-generator-panel");
 
 // Passwort vergessen
 const kontoForgotEmail = document.getElementById("konto-forgot-email");
@@ -120,6 +134,39 @@ function zeigeZustand() {
   kontoAvatarEl.innerHTML = buchstabe || PERSON_ICON;
   if (kontoAvatarGrossEl) kontoAvatarGrossEl.textContent = buchstabe;
   kontoDotEl.hidden = !zeigeAlsAngemeldet;
+}
+
+/* ---------- Rolle laden und rollenabhängige Bereiche zeigen ---------- */
+
+// Liest die Rolle aus der profiles-Tabelle (nicht aus user_metadata – die
+// könnte man sich als Nutzer:in selbst umschreiben). Ohne eingerichtete
+// Tabelle (siehe KONTO-SETUP.md) bleibt nutzerRolle einfach null, die App
+// verhält sich dann wie bisher ohne Rollen-Funktionen.
+async function ladeRolle() {
+  if (!supabase || !nutzer) {
+    nutzerRolle = null;
+    zeigeRollenUI();
+    return;
+  }
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", nutzer.id)
+    .single();
+  nutzerRolle = error ? null : data.role;
+  zeigeRollenUI();
+}
+
+function zeigeRollenUI() {
+  const istLehrer = nutzerRolle === "lehrer";
+  if (kiGeneratorPanel) kiGeneratorPanel.hidden = !istLehrer;
+
+  // Einmal pro Login eine passende Vorlage vorschlagen, ohne eine bereits
+  // von Hand getroffene Wahl zu überschreiben.
+  if (istLehrer && !rollenVorlageGesetzt && typeof waehlePapier === "function") {
+    waehlePapier("lined");
+    rollenVorlageGesetzt = true;
+  }
 }
 
 /* ---------- Zwischen Anmelden / Registrieren / ... wechseln ---------- */
@@ -208,6 +255,8 @@ async function initKonto() {
     // Erst hier laden – so bleibt die App auch ohne Netz benutzbar
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
     supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    // Cross-Datei-Zugriff für ki.js, gleiches Muster wie window.kontoAutoSichern.
+    window.supabaseClient = supabase;
   } catch (err) {
     kmelde("Verbindung zu Supabase nicht möglich – die App läuft ohne Konto weiter.", true);
     zeigeZustand();
@@ -231,6 +280,7 @@ async function initKonto() {
     const vorher = nutzer;
     nutzer = session ? session.user : null;
     zeigeZustand();
+    ladeRolle();
     if (!vorher && nutzer && !istPasswortWiederherstellung) {
       kmelde(`Angemeldet als ${nutzer.email}.`);
       abgleichen();
@@ -240,6 +290,7 @@ async function initKonto() {
   const { data } = await supabase.auth.getSession();
   nutzer = data.session ? data.session.user : null;
   zeigeZustand();
+  ladeRolle();
   if (nutzer) abgleichen();
 }
 
@@ -277,6 +328,23 @@ kontoLoginSendenBtn.addEventListener("click", async () => {
   if (error) kmelde(`Anmeldung fehlgeschlagen: ${error.message}`, true);
 });
 
+// Rolle wählen (Registrieren) – nur eine Auswahl gleichzeitig möglich,
+// gleiches Muster wie waehlePapier() in script.js.
+function waehleRolle(rolle) {
+  gewaehlteRolle = rolle;
+  [
+    [kontoSignupRolleLehrer, "lehrer"],
+    [kontoSignupRolleSchueler, "schueler"],
+  ].forEach(([btn, wert]) => {
+    const gewaehlt = wert === rolle;
+    btn.classList.toggle("ausgewaehlt", gewaehlt);
+    btn.setAttribute("aria-checked", String(gewaehlt));
+  });
+}
+
+kontoSignupRolleLehrer.addEventListener("click", () => waehleRolle("lehrer"));
+kontoSignupRolleSchueler.addEventListener("click", () => waehleRolle("schueler"));
+
 // Neues Konto registrieren
 kontoSignupSendenBtn.addEventListener("click", async () => {
   const mail = kontoSignupEmail.value.trim();
@@ -295,6 +363,10 @@ kontoSignupSendenBtn.addEventListener("click", async () => {
     kmelde("Die Passwörter stimmen nicht überein.", true);
     return;
   }
+  if (!gewaehlteRolle) {
+    kmelde("Bitte wähle, ob du Lehrer*in oder Schüler*in bist.", true);
+    return;
+  }
 
   kontoSignupSendenBtn.disabled = true;
   kmelde("Konto wird angelegt …");
@@ -302,7 +374,13 @@ kontoSignupSendenBtn.addEventListener("click", async () => {
   const { data, error } = await supabase.auth.signUp({
     email: mail,
     password: passwort,
-    options: { emailRedirectTo: window.location.href.split("#")[0] },
+    options: {
+      emailRedirectTo: window.location.href.split("#")[0],
+      // Wird von einem serverseitigen Trigger einmalig in die
+      // profiles-Tabelle übernommen (siehe KONTO-SETUP.md) – danach liest
+      // diese App die Rolle ausschließlich aus profiles, nie mehr von hier.
+      data: { role: gewaehlteRolle },
+    },
   });
 
   kontoSignupSendenBtn.disabled = false;
@@ -408,7 +486,10 @@ kontoAbmeldenBtn.addEventListener("click", async () => {
   await supabase.auth.signOut();
   nutzer = null;
   istPasswortWiederherstellung = false;
+  nutzerRolle = null;
+  rollenVorlageGesetzt = false;
   zeigeZustand();
+  zeigeRollenUI();
   zeigeModus("login");
   kmelde("Abgemeldet. Die Handschrift bleibt in diesem Browser gespeichert.");
 });
@@ -473,6 +554,11 @@ kontoSichernBtn.addEventListener("click", async () => {
   kontoSichernBtn.disabled = false;
   kmelde(fehler ? `Fehlgeschlagen: ${fehler.message}` : "Im Konto gesichert.", Boolean(fehler));
 });
+
+// Nur für UX-Zwecke (z. B. ki.js kann das Panel schon lokal ausblenden,
+// bevor ein Klick passiert) – die eigentliche, verbindliche Prüfung passiert
+// immer serverseitig in der Edge Function, nie hier.
+window.kontoRolle = () => nutzerRolle;
 
 /* Wird von scanner.js direkt nach einem erfolgreichen Einlesen aufgerufen */
 window.kontoAutoSichern = async function (daten) {

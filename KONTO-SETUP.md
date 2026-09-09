@@ -90,6 +90,92 @@ Seite neu laden → **👤 Konto** aufklappen → E-Mail eingeben → Link im Po
 anklicken. Danach wird eine vorhandene Handschrift automatisch gesichert und
 beim nächsten Anmelden wieder geladen.
 
+## 7. Rollen (Lehrer/Schüler) und KI-Arbeitsblatt-Generator (optional)
+
+Ohne diesen Schritt funktioniert alles wie bisher: Jede:r gilt beim
+Registrieren implizit als Schüler:in, das KI-Panel bleibt für alle
+versteckt. Erst mit dieser Einrichtung erscheint bei der Registrierung eine
+Auswahl "Lehrer*in" / "Schüler*in", und Lehrer-Konten bekommen einen
+KI-Arbeitsblatt-Generator (Thema eingeben → Claude erzeugt Übungstext).
+
+**a) Rollen-Tabelle anlegen** – im **SQL Editor** einfügen und ausführen:
+
+```sql
+create table public.profiles (
+  id            uuid primary key references auth.users(id) on delete cascade,
+  role          text not null check (role in ('lehrer', 'schueler')),
+  ai_uses_heute int not null default 0,
+  ai_uses_datum date not null default current_date,
+  created_at    timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+create policy "eigenes Profil lesen"
+on public.profiles for select to authenticated
+using (id = auth.uid());
+
+-- Bewusst KEINE insert/update/delete-Policy für "authenticated" – dadurch
+-- kann sich niemand selbst zum Lehrer machen, geschrieben wird nur vom
+-- Trigger unten und von der KI-Funktion (Schritt c).
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, role)
+  values (
+    new.id,
+    case when new.raw_user_meta_data ->> 'role' = 'lehrer'
+         then 'lehrer' else 'schueler' end
+  );
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+```
+
+**b) Anthropic-API-Key holen** – auf
+[console.anthropic.com](https://console.anthropic.com) registrieren und
+einen API-Key erstellen. **Kostet Geld pro Anfrage** (Cent-Bereich pro
+Arbeitsblatt) – vorher kurz die Preisseite anschauen.
+
+**c) Edge Function anlegen** – unter **Edge Functions → Deploy a new
+function**:
+
+- Name **exakt** `arbeitsblatt-generieren` (muss zum Aufruf in `ki.js`
+  passen)
+- Den Inhalt von
+  [`supabase/functions/arbeitsblatt-generieren/index.ts`](supabase/functions/arbeitsblatt-generieren/index.ts)
+  aus diesem Repo hineinkopieren
+
+**d) Anthropic-Key als Secret hinterlegen** – unter **Edge Functions →
+Secrets** einen Eintrag `ANTHROPIC_API_KEY` mit dem Key aus Schritt b
+anlegen.
+
+> **Der Anthropic-Key gehört, genau wie der `service_role`-Key, niemals in
+> `config.js` oder eine andere Datei, die im Browser landet.** Er lebt
+> ausschließlich als Function-Secret.
+
+Ein paar ehrliche Hinweise dazu:
+
+- "Lehrer*in" wird bei der Registrierung selbst gewählt, nicht gegen eine
+  echte Schule geprüft – das ist Absicht, keine Sicherheitslücke. Was die
+  `profiles`-Tabelle verhindert, ist nur, dass sich ein Schüler-Konto
+  *nachträglich* selbst zum Lehrer hochstuft.
+- Das Tageslimit (20 Generierungen pro Konto) ist eine bewusst grobe
+  Kostenbremse, kein echtes Rate-Limiting – bei richtiger Nutzung später
+  verfeinern.
+- Wird die Funktion über das Dashboard per Copy-Paste eingerichtet, am
+  besten immer zuerst die Datei im Repo ändern und dann neu einfügen, sonst
+  laufen beide Stände auseinander.
+
 ---
 
 ## Bevor echte Nutzer dazukommen
@@ -103,4 +189,4 @@ personenbezogene Daten. Dann brauchst du:
 - eine Möglichkeit, das Konto samt Daten löschen zu lassen
 
 Solange du die App nur selbst benutzt, ist das kein Thema. Vorher aber genau
-anschauen – und bei Minderjährigkeit vorher mit deinen Eltern besprechen.
+anschauen (siehe `impressum.html` und `datenschutz.html`).

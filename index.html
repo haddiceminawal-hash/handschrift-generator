@@ -129,6 +129,24 @@ Bis bald!</textarea>
       </button>
     </details>
 
+    <!-- Nur sichtbar für Konten mit Rolle "lehrer" (siehe konto.js,
+         zeigeRollenUI()). Ohne eingerichtete KI-Funktion (siehe
+         KONTO-SETUP.md) bleibt das Panel für alle versteckt. -->
+    <details id="ki-generator-panel" class="own" hidden>
+      <summary>🪄 KI-Arbeitsblatt-Text erzeugen</summary>
+
+      <label class="field">
+        <span class="field-label">Thema</span>
+        <textarea id="ki-thema" rows="2" placeholder="z. B. Einmaleins der 4, Übungssätze mit ie/ieh"></textarea>
+      </label>
+
+      <button type="button" id="ki-erzeugen" class="btn btn-primary btn-small btn-block">
+        Text erzeugen
+      </button>
+
+      <p id="ki-status" class="status" role="status"></p>
+    </details>
+
   </section>
 
   <!-- ---------- Rechte Seite: Vorschau ---------- -->
@@ -249,6 +267,17 @@ Bis bald!</textarea>
         <span class="field-label">Passwort bestätigen</span>
         <input type="password" id="konto-signup-passwort2" autocomplete="new-password" placeholder="••••••••">
       </label>
+      <div class="field field-wide">
+        <span class="field-label">Ich bin …</span>
+        <div class="role-picker" role="radiogroup" aria-label="Rolle wählen">
+          <button type="button" id="konto-signup-rolle-lehrer" class="role-karte" role="radio" aria-checked="false">
+            Lehrer*in
+          </button>
+          <button type="button" id="konto-signup-rolle-schueler" class="role-karte" role="radio" aria-checked="false">
+            Schüler*in
+          </button>
+        </div>
+      </div>
       <button type="button" id="konto-signup-senden" class="btn btn-primary btn-small btn-block">
         Konto erstellen
       </button>
@@ -339,5 +368,6 @@ Bis bald!</textarea>
 <script src="scanner.js"></script>
 <script src="konto.js"></script>
 <script src="editor.js"></script>
+<script src="ki.js"></script>
 </body>
 </html>
