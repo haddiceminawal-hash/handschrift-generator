@@ -38,6 +38,14 @@ let nutzerRolle = null;
 let rollenVorlageGesetzt = false;
 let gewaehlteRolle = null;
 
+// Vorschau ohne eigenes Konto: an die URL "?vorschau=lehrer" bzw.
+// "?vorschau=schueler" anhängen, um die jeweilige Ansicht lokal zu sehen,
+// ohne sich anzumelden oder Supabase einzurichten. Rein kosmetisch – die
+// echte KI-Generierung bleibt serverseitig über die profiles-Tabelle
+// abgesichert und lässt sich dadurch nicht umgehen, das hier überschreibt
+// nur, was die Oberfläche anzeigt.
+const vorschauRolle = new URLSearchParams(window.location.search).get("vorschau");
+
 /* ---------- Elemente ---------- */
 
 const kontoHinweis = document.getElementById("konto-hinweis");
@@ -158,7 +166,7 @@ async function ladeRolle() {
 }
 
 function zeigeRollenUI() {
-  const istLehrer = nutzerRolle === "lehrer";
+  const istLehrer = (vorschauRolle || nutzerRolle) === "lehrer";
   if (kiGeneratorPanel) kiGeneratorPanel.hidden = !istLehrer;
 
   // Einmal pro Login eine passende Vorlage vorschlagen, ohne eine bereits
@@ -248,6 +256,7 @@ kontoDropdown.addEventListener("click", (ev) => ev.stopPropagation());
 async function initKonto() {
   if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
     zeigeZustand();
+    zeigeRollenUI(); // Vorschau (?vorschau=lehrer) soll auch ohne Supabase gehen
     return;
   }
 
@@ -260,6 +269,7 @@ async function initKonto() {
   } catch (err) {
     kmelde("Verbindung zu Supabase nicht möglich – die App läuft ohne Konto weiter.", true);
     zeigeZustand();
+    zeigeRollenUI();
     return;
   }
 
