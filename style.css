@@ -764,6 +764,88 @@ input[type="file"] {
   padding: 4px 6px;
 }
 
+/* ---------- Anfasser zum Größenändern ---------- */
+.resize-handle {
+  position: absolute;
+  background: var(--indigo);
+  border: 1.5px solid #fff;
+  z-index: 2;
+}
+
+.resize-e {
+  right: -4px;
+  top: 50%;
+  width: 8px;
+  height: 22px;
+  border-radius: 3px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.resize-s {
+  bottom: -4px;
+  left: 50%;
+  width: 22px;
+  height: 8px;
+  border-radius: 3px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.resize-se {
+  right: -5px;
+  bottom: -5px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  cursor: nwse-resize;
+}
+
+/* ---------- Werkzeugleiste: Ausrichten & Anordnen ---------- */
+.arrange-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.arrange-group {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  background: var(--panel-bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.arrange-btn {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--text-soft);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.arrange-btn:hover {
+  background: var(--indigo-light);
+  color: var(--indigo-dark);
+}
+
+.arrange-btn-text {
+  width: auto;
+  padding: 0 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* ---------- Overlay zum Ecken-Anklicken ---------- */
 .overlay {
   position: fixed;

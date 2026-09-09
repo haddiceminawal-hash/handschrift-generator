@@ -149,7 +149,25 @@ Bis bald!</textarea>
     </div>
 
     <div class="preview-actions">
+      <button type="button" id="undo-btn" class="btn btn-secondary btn-small" title="Rückgängig (Strg+Z)" disabled>↶ Rückgängig</button>
+      <button type="button" id="redo-btn" class="btn btn-secondary btn-small" title="Wiederholen (Strg+Umschalt+Z)" disabled>↷ Wiederholen</button>
       <button type="button" id="add-block" class="btn btn-secondary btn-small">➕ Textfeld hinzufügen</button>
+    </div>
+
+    <!-- Erscheint nur, wenn mindestens ein Textfeld ausgewählt ist -->
+    <div id="arrange-toolbar" class="arrange-toolbar" hidden>
+      <div id="align-buttons" class="arrange-group" hidden>
+        <button type="button" class="arrange-btn" data-align="left" title="Linksbündig ausrichten">⇤</button>
+        <button type="button" class="arrange-btn" data-align="center-h" title="Horizontal zentrieren">↔</button>
+        <button type="button" class="arrange-btn" data-align="right" title="Rechtsbündig ausrichten">⇥</button>
+        <button type="button" class="arrange-btn" data-align="top" title="Oben ausrichten">⤒</button>
+        <button type="button" class="arrange-btn" data-align="middle-v" title="Vertikal zentrieren">↕</button>
+        <button type="button" class="arrange-btn" data-align="bottom" title="Unten ausrichten">⤓</button>
+      </div>
+      <div class="arrange-group">
+        <button type="button" id="bring-front" class="arrange-btn arrange-btn-text" title="Nach vorne">Nach vorne</button>
+        <button type="button" id="send-back" class="arrange-btn arrange-btn-text" title="Nach hinten">Nach hinten</button>
+      </div>
     </div>
 
   </section>

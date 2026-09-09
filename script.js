@@ -686,7 +686,15 @@ async function render() {
 
   bloecke.forEach((block, index) => {
     const lines = wrapText(block.text, block.w, eigeneMessung);
-    const maxLines = Math.max(1, Math.floor((seitenUnten - block.y) / lineHeight) + 1);
+
+    // Ohne von Hand gesetzte Höhe (block.h) richtet sich die maximale
+    // Zeilenzahl nur nach dem Seitenende. Wurde das Textfeld per Ziehen
+    // niedriger gemacht, begrenzt zusätzlich block.h – überschüssige
+    // Zeilen werden dann wie beim Seitenende als "passt nicht" gemeldet.
+    const seitenMaxLines = Math.max(1, Math.floor((seitenUnten - block.y) / lineHeight) + 1);
+    const maxLines = block.h
+      ? Math.min(seitenMaxLines, Math.max(1, Math.floor(block.h / lineHeight)))
+      : seitenMaxLines;
 
     const drawn = drawLines(
       lines,
@@ -701,7 +709,7 @@ async function render() {
       x: block.x - 8,
       y: block.y - lineHeight * 0.72,
       w: block.w + 16,
-      h: Math.max(drawn, 1) * lineHeight + lineHeight * 0.3,
+      h: block.h || Math.max(drawn, 1) * lineHeight + lineHeight * 0.3,
     });
   });
 

@@ -8,8 +8,11 @@ geschrieben. Läuft komplett im Browser – ohne Server, ohne Installation.
 ## Funktionen
 
 - **Frei verschiebbare Textfelder** – direkt auf dem Blatt anklicken, ziehen,
-  per Doppelklick bearbeiten; Doppelklick auf eine freie Stelle legt ein
-  neues Textfeld an
+  in der Größe ändern, per Doppelklick bearbeiten; Doppelklick auf eine
+  freie Stelle legt ein neues Textfeld an
+- **Mehrfachauswahl, Ausrichten & Anordnen** – mehrere Textfelder per
+  Umschalt-Klick auswählen und bündig ausrichten, nach vorne/hinten stellen
+- **Rückgängig / Wiederholen** (Strg+Z / Strg+Umschalt+Z)
 - **22 Schriftarten** in drei Gruppen (Druckschrift, Schreibschrift, Kalligrafie)
 - **Eigene Handschrift einlesen** – Vorlage ausdrucken, ausfüllen, abfotografieren
 - **Konto** (optional) – Handschrift bleibt geräteübergreifend erhalten
@@ -83,6 +86,30 @@ Blatt wird neu gezeichnet.
 
 Textfeld 1 ist zweiseitig mit dem Textfeld in der Seitenleiste gekoppelt –
 beide bearbeiten denselben Text, egal auf welchem Weg man ihn ändert.
+
+### Größe, Mehrfachauswahl, Ausrichten & Anordnen
+
+An den blauen Punkten am ausgewählten Textfeld lässt sich die Breite (und
+damit der Zeilenumbruch) sowie die Höhe ziehen. Eine von Hand gesetzte Höhe
+(`block.h`) begrenzt zusätzlich die Zeilenzahl – wie beim Seitenende wird zu
+viel Text dann als "passt nicht" gemeldet, statt einfach zu verschwinden.
+
+Umschalt- oder Cmd/Strg-Klick fügt weitere Textfelder zur Auswahl hinzu. Ab
+zwei ausgewählten Textfeldern erscheint eine Werkzeugleiste zum Ausrichten
+(an den äußersten Rändern der gesamten Auswahl, wie in Word). "Nach
+vorne"/"nach hinten" verschiebt die ausgewählten Textfelder einfach ans Ende
+bzw. an den Anfang des `bloecke`-Arrays – das bestimmt gleichzeitig die
+Zeichenreihenfolge auf dem Canvas *und* die Stapelreihenfolge im DOM, es
+brauchte also keine zusätzliche z-index-Verwaltung.
+
+### Rückgängig / Wiederholen
+
+Ein einfacher Verlaufs-Stapel in `editor.js`: Aufgezeichnet wird nicht bei
+jeder Mausbewegung, sondern nur am Ende einer Aktion (Ziehen/Größe-Ändern
+fertig, Textfeld verlassen, hinzugefügt, gelöscht, ausgerichtet, ...) – sonst
+bräuchte man beim Rückgängigmachen einer einzigen Zieh-Bewegung hunderte
+Klicks. Strg+Z funktioniert nicht, während in einem Textfeld getippt wird –
+dort greift stattdessen das eingebaute Undo des Browsers.
 
 ## Aufbau
 
