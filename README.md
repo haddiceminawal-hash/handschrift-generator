@@ -167,7 +167,7 @@ verschwinden.
 | `konto.js` | Anmeldung und Sicherung bei Supabase |
 | `config.js` | Zugangsdaten für Supabase (leer = App läuft ohne Konto) |
 | `fonts.css` / `fonts/` | Lokal gehostete Schriftarten (kein Google-Fonts-CDN) |
-| `impressum.html` | Impressum (Platzhalter für Name/Adresse müssen noch ausgefüllt werden) |
+| `impressum.html` | Impressum |
 | `datenschutz.html` | Datenschutzerklärung |
 
 ## Lokal starten
@@ -230,10 +230,6 @@ funktioniert alles andere unverändert weiter.
 
 ## Nächste Schritte
 
-- [ ] **Vor Veröffentlichung:** Platzhalter in `impressum.html` ausfüllen
-  (Name, Adresse, E-Mail) – als vermutlich minderjährige Person dafür am
-  besten mit einem Elternteil/Erziehungsberechtigten absprechen, siehe
-  Hinweis-Box oben in der Datei
 - [ ] Ecken automatisch finden, statt sie anzuklicken
 - [ ] Mehrere Varianten pro Buchstabe (zweite Vorlagenseite)
 - [ ] Konto selbst löschen können (aktuell nur per E-Mail an den Betreiber)
